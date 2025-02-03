@@ -94,7 +94,7 @@ playwright
 - Develop the Next.js frontend to display bike comparisons
 
 ## Contributors
-- Your Name
+- Lucas Pierru
 
 ## License
 MIT License
