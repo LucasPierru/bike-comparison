@@ -33,7 +33,7 @@ bike-comparison-website/
 ### 1. Set Up a Virtual Environment (Recommended)
 ```bash
 cd scraper
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate  # (Linux/macOS)
 venv\Scripts\Activate     # (Windows PowerShell)
 ```
