@@ -12,7 +12,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from toolbox.toolbox import replace_query_param, previous_and_next
+from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes
 
 # Set up Selenium
 options = webdriver.ChromeOptions()
@@ -71,6 +71,7 @@ def scrape_bikes_selenium(url):
 
       if link["base_url"] != previous_url:
         variations = []
+        components = []
         header = driver.find_element(By.CLASS_NAME, "buying-zone__header")
         name = header.find_element(By.CLASS_NAME, "buying-zone__title").text
 
@@ -84,6 +85,27 @@ def scrape_bikes_selenium(url):
         currentPrice = priceSpan.find_element(By.CLASS_NAME, "actual-price").text
 
         description = footer.find_element(By.TAG_NAME, "p").text
+        specs_container = driver.find_element(By.ID, "trekRoadProductSpecificationsComponentBOM")
+        specs_items = specs_container.find_elements(By.TAG_NAME, "tr")
+
+        for spec in specs_items:
+          try :
+            spec_type = spec.find_element(By.TAG_NAME, "th").get_attribute("innerText").strip().replace("*", "")
+            spec_value = spec.find_element(By.TAG_NAME, "td").get_attribute("innerText").strip()
+
+            if "Size" in spec_value: 
+              spec_value = parse_sizes(spec_value)
+
+            newSpec = {"type": spec_type, "value": spec_value}
+            components.append(newSpec)
+          except NoSuchElementException:
+            spec_value = spec.find_element(By.TAG_NAME, "td").get_attribute("innerText").strip()
+
+            if "Size" in spec_value: 
+              spec_value = parse_sizes(spec_value)
+
+            newSpec = {"type": spec_type, "value": spec_value}
+            components.append(newSpec)
       
       size_elements = driver.find_elements(By.CLASS_NAME, "product-attribute-btn")
       sizes = []
@@ -95,7 +117,7 @@ def scrape_bikes_selenium(url):
       variations.append({"color": color, "sizes": sizes})
       
       if link["base_url"] != next_url:
-        newBike = {"name": name, "currentPrice": currentPrice, "link": link, "imageUrl": imageUrl, "source": url, "description": description, "variations": variations}
+        newBike = {"name": name, "currentPrice": currentPrice, "link": link, "imageUrl": imageUrl, "source": url, "description": description, "variations": variations, "components": components}
 
         print(f"bike: {newBike}")
         bikes.append(newBike)
