@@ -38,6 +38,12 @@ source venv/bin/activate  # (Linux/macOS)
 venv\Scripts\Activate     # (Windows PowerShell)
 ```
 
+```bash
+cd scraper/venv/Scripts
+. activate
+to activate the venv
+```
+
 ### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt

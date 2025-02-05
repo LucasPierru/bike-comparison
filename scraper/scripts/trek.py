@@ -9,27 +9,47 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 import time
 import sys
 import os
+from pymongo import MongoClient
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes
-
+from db import get_database
 # Set up Selenium
 options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run without opening a browser
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+db = get_database()
+collection = db["bikes"]
 
 class Trek:
   bike_links = []
   bikes = []
+  result_count = 0
+  bike_count = 0
 
-  def __init__(self, url):
+  def __init__(self, url, page=1):
     self.url = url
+    self.page = page
+
+  def post_bike(self, bike):
+    print(f"bike: {bike}")
+    existing_bike = collection.find_one({"source": bike["source"]})
+
+    if existing_bike:
+        print(f"Bike already exists in DB: {bike['name']}")
+    else:
+        collection.insert_one(bike)
+        print(f"Bike inserted: {bike['name']}")
+
+  def go_to_next_page(self):
+    self.page += 1
 
   def get_bike_links(self):
-    driver.get(self.url)
+    driver.get(f"{self.url}&page={self.page}")
     WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "product-list__item")))
 
+    self.result_count = int(driver.find_element(By.ID, "results-count--product").text.split(" ")[0])
     bike_elements = driver.find_elements(By.CLASS_NAME, "product-list__item")  # Adjust selector
 
     for bike in bike_elements:
@@ -54,8 +74,6 @@ class Trek:
           print(f"Skipping a bike due to error")
 
   def scrape_bikes_selenium(self):
-    self.get_bike_links()
-
     for previous, link, nxt in previous_and_next(self.bike_links):
       base_url = f"{link["base_url"]}{link["color"]}"
       if previous is not None:
@@ -120,19 +138,28 @@ class Trek:
         variations.append({"color": color, "sizes": sizes})
         
         if link["base_url"] != next_url:
-          newBike = {"name": name, "currentPrice": currentPrice, "link": link, "imageUrl": imageUrl, "source": self.url, "description": description, "variations": variations, "components": components}
+          newBike = {"name": name, "currentPrice": currentPrice, "link": link, "imageUrl": imageUrl, "source": link["base_url"], "description": description, "variations": variations, "components": components}
 
-          print(f"bike: {newBike}")
+          self.post_bike(newBike)
           self.bikes.append(newBike)
 
       except NoSuchElementException as e:
         print(f"Skipping a bike due to error {link} {e}")
 
     """ collection.insert_many(bikes) """
+    self.bike_count += len(self.bikes)
     print(f"Scraped {len(self.bikes)} bikes from {self.url}")
     print(self.bikes[:5])
 
+  def get_bikes(self):
+    self.get_bike_links()
+    while self.bike_count < self.result_count:
+      self.scrape_bikes_selenium()
+      self.go_to_next_page()
+  
+  
+
 # Example usage
 trek = Trek("https://www.trekbikes.com/ca/en_CA/bikes/road-bikes/c/B200/?pageSize=72&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#")
-trek.scrape_bikes_selenium()
+trek.get_bikes()
 driver.quit()

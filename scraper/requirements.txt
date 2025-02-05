@@ -6,3 +6,4 @@ webdriver-manager
 schedule
 pandas
 playwright
+pymongo
