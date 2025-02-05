@@ -19,116 +19,120 @@ options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run without opening a browser
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-def get_bike_links(url):
-  driver.get(url)
-  WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "product-list__item")))
-
+class Trek:
   bike_links = []
-
-  bike_elements = driver.find_elements(By.CLASS_NAME, "product-list__item")  # Adjust selector
-
-  for bike in bike_elements:
-    try:
-        elem = bike.find_element(By.TAG_NAME, "a")
-        color_list = elem.find_element(By.CLASS_NAME, "pdl-swatches")
-        color_elements = color_list.find_elements(By.CLASS_NAME, "pdl-swatch-container")
-        link = elem.get_attribute("href")
-
-        for color in color_elements:
-          col = color.find_element(By.TAG_NAME, "label").get_attribute("title")
-          base_url = replace_query_param(link, "colorCode", "")
-          bike_link = {
-            "base_url": base_url,
-            "color": col
-          }
-          bike_links.append(bike_link)
-
-    except StaleElementReferenceException:
-        continue  # Skip stale elements
-    except NoSuchElementException:
-        print(f"Skipping a bike due to error")
-  return bike_links
-
-def scrape_bikes_selenium(url):
-  bike_links = get_bike_links(url)
   bikes = []
 
-  for previous, link, nxt in previous_and_next(bike_links):
-    base_url = f"{link["base_url"]}{link["color"]}"
-    if previous is not None:
-      previous_url = previous["base_url"]
-    else:
-      previous_url = ""
+  def __init__(self, url):
+    self.url = url
 
-    if nxt is not None:
-      next_url = nxt["base_url"]
-    else:
-      next_url = ""
-  
-    try:
-      driver.get(base_url)
-      time.sleep(3)
+  def get_bike_links(self):
+    driver.get(self.url)
+    WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "product-list__item")))
 
-      if link["base_url"] != previous_url:
-        variations = []
-        components = []
-        header = driver.find_element(By.CLASS_NAME, "buying-zone__header")
-        name = header.find_element(By.CLASS_NAME, "buying-zone__title").text
+    bike_elements = driver.find_elements(By.CLASS_NAME, "product-list__item")  # Adjust selector
 
-        image = driver.find_element(By.CLASS_NAME, "swiper-lazy").get_attribute("src")
-        if image is not None:
-          imageUrl = image.split("%20")[0]
+    for bike in bike_elements:
+      try:
+          elem = bike.find_element(By.TAG_NAME, "a")
+          color_list = elem.find_element(By.CLASS_NAME, "pdl-swatches")
+          color_elements = color_list.find_elements(By.CLASS_NAME, "pdl-swatch-container")
+          link = elem.get_attribute("href")
 
-        footer = driver.find_element(By.CLASS_NAME, "buying-zone__footer")
+          for color in color_elements:
+            col = color.find_element(By.TAG_NAME, "label").get_attribute("title")
+            base_url = replace_query_param(link, "colorCode", "")
+            bike_link = {
+              "base_url": base_url,
+              "color": col
+            }
+            self.bike_links.append(bike_link)
 
-        priceSpan = footer.find_element(By.TAG_NAME, "span")
-        currentPrice = priceSpan.find_element(By.CLASS_NAME, "actual-price").text
+      except StaleElementReferenceException:
+          continue  # Skip stale elements
+      except NoSuchElementException:
+          print(f"Skipping a bike due to error")
 
-        description = footer.find_element(By.TAG_NAME, "p").text
-        specs_container = driver.find_element(By.ID, "trekRoadProductSpecificationsComponentBOM")
-        specs_items = specs_container.find_elements(By.TAG_NAME, "tr")
+  def scrape_bikes_selenium(self):
+    self.get_bike_links()
 
-        for spec in specs_items:
-          try :
-            spec_type = spec.find_element(By.TAG_NAME, "th").get_attribute("innerText").strip().replace("*", "")
-            spec_value = spec.find_element(By.TAG_NAME, "td").get_attribute("innerText").strip()
+    for previous, link, nxt in previous_and_next(self.bike_links):
+      base_url = f"{link["base_url"]}{link["color"]}"
+      if previous is not None:
+        previous_url = previous["base_url"]
+      else:
+        previous_url = ""
 
-            if "Size" in spec_value: 
-              spec_value = parse_sizes(spec_value)
+      if nxt is not None:
+        next_url = nxt["base_url"]
+      else:
+        next_url = ""
+    
+      try:
+        driver.get(base_url)
+        time.sleep(3)
 
-            newSpec = {"type": spec_type, "value": spec_value}
-            components.append(newSpec)
-          except NoSuchElementException:
-            spec_value = spec.find_element(By.TAG_NAME, "td").get_attribute("innerText").strip()
+        if link["base_url"] != previous_url:
+          variations = []
+          components = []
+          header = driver.find_element(By.CLASS_NAME, "buying-zone__header")
+          name = header.find_element(By.CLASS_NAME, "buying-zone__title").text
 
-            if "Size" in spec_value: 
-              spec_value = parse_sizes(spec_value)
+          image = driver.find_element(By.CLASS_NAME, "swiper-lazy").get_attribute("src")
+          if image is not None:
+            imageUrl = image.split("%20")[0]
 
-            newSpec = {"type": spec_type, "value": spec_value}
-            components.append(newSpec)
-      
-      size_elements = driver.find_elements(By.CLASS_NAME, "product-attribute-btn")
-      sizes = []
-      color = link["color"]
+          footer = driver.find_element(By.CLASS_NAME, "buying-zone__footer")
 
-      for size in size_elements:
-        sizes.append(size.find_element(By.TAG_NAME, "span").text)
+          priceSpan = footer.find_element(By.TAG_NAME, "span")
+          currentPrice = priceSpan.find_element(By.CLASS_NAME, "actual-price").text
 
-      variations.append({"color": color, "sizes": sizes})
-      
-      if link["base_url"] != next_url:
-        newBike = {"name": name, "currentPrice": currentPrice, "link": link, "imageUrl": imageUrl, "source": url, "description": description, "variations": variations, "components": components}
+          description = footer.find_element(By.TAG_NAME, "p").text
+          specs_container = driver.find_element(By.ID, "trekRoadProductSpecificationsComponentBOM")
+          specs_items = specs_container.find_elements(By.TAG_NAME, "tr")
 
-        print(f"bike: {newBike}")
-        bikes.append(newBike)
+          for spec in specs_items:
+            try :
+              spec_type = spec.find_element(By.TAG_NAME, "th").get_attribute("innerText").strip().replace("*", "")
+              spec_value = spec.find_element(By.TAG_NAME, "td").get_attribute("innerText").strip()
 
-    except NoSuchElementException as e:
-      print(f"Skipping a bike due to error {link} {e}")
+              if "Size" in spec_value: 
+                spec_value = parse_sizes(spec_value)
 
-  """ collection.insert_many(bikes) """
-  print(f"Scraped {len(bikes)} bikes from {url}")
-  print(bikes[:5])
+              newSpec = {"type": spec_type, "value": spec_value}
+              components.append(newSpec)
+            except NoSuchElementException:
+              spec_value = spec.find_element(By.TAG_NAME, "td").get_attribute("innerText").strip()
+
+              if "Size" in spec_value: 
+                spec_value = parse_sizes(spec_value)
+
+              newSpec = {"type": spec_type, "value": spec_value}
+              components.append(newSpec)
+        
+        size_elements = driver.find_elements(By.CLASS_NAME, "product-attribute-btn")
+        sizes = []
+        color = link["color"]
+
+        for size in size_elements:
+          sizes.append(size.find_element(By.TAG_NAME, "span").text)
+
+        variations.append({"color": color, "sizes": sizes})
+        
+        if link["base_url"] != next_url:
+          newBike = {"name": name, "currentPrice": currentPrice, "link": link, "imageUrl": imageUrl, "source": self.url, "description": description, "variations": variations, "components": components}
+
+          print(f"bike: {newBike}")
+          self.bikes.append(newBike)
+
+      except NoSuchElementException as e:
+        print(f"Skipping a bike due to error {link} {e}")
+
+    """ collection.insert_many(bikes) """
+    print(f"Scraped {len(self.bikes)} bikes from {self.url}")
+    print(self.bikes[:5])
 
 # Example usage
-scrape_bikes_selenium("https://www.trekbikes.com/ca/en_CA/bikes/road-bikes/c/B200/?pageSize=72&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#")
+trek = Trek("https://www.trekbikes.com/ca/en_CA/bikes/road-bikes/c/B200/?pageSize=72&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#")
+trek.scrape_bikes_selenium()
 driver.quit()
