@@ -7,6 +7,7 @@ const bikeSchema = new Schema({
   name: String,
   description: String,
   brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
+  type: String,
   currentPrice: Number,
   currency: String,
   imageUrl: String,

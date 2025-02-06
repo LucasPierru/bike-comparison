@@ -9,7 +9,7 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 import time
 import sys
 import os
-from pymongo import MongoClient
+from datetime import datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -20,26 +20,42 @@ options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run without opening a browser
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 db = get_database()
-collection = db["bikes"]
+bike_collection = db["bikes"]
+brand_collection = db["brands"]
 
 class Trek:
   bike_links = []
   bikes = []
   result_count = 0
   bike_count = 0
+  brand_id = ""
 
   def __init__(self, url, page=1):
     self.url = url
     self.page = page
 
+  def get_brand(self, name):
+    existing_brand = brand_collection.find_one({"name": name})
+    self.brand_id = existing_brand._id
+
+  def post_brand(self, brand):
+    existing_brand = brand_collection.find_one({"name": brand["name"]})
+    self.brand_id = existing_brand._id
+
+    if existing_brand:
+        print(f"Brand already exists in DB: {brand['name']}")
+    else:
+        new_brand = brand_collection.insert_one(brand)
+        self.brand_id = new_brand.__inserted_id
+        print(f"Brand inserted: {brand['name']}")
+
   def post_bike(self, bike):
-    print(f"bike: {bike}")
-    existing_bike = collection.find_one({"source": bike["source"]})
+    existing_bike = bike_collection.find_one({"source": bike["source"]})
 
     if existing_bike:
         print(f"Bike already exists in DB: {bike['name']}")
     else:
-        collection.insert_one(bike)
+        bike_collection.insert_one(bike)
         print(f"Bike inserted: {bike['name']}")
 
   def go_to_next_page(self):
@@ -138,7 +154,20 @@ class Trek:
         variations.append({"color": color, "sizes": sizes})
         
         if link["base_url"] != next_url:
-          newBike = {"name": name, "currentPrice": currentPrice, "link": link, "imageUrl": imageUrl, "source": link["base_url"], "description": description, "variations": variations, "components": components}
+          newBike = {
+            "createdAt": datetime.now(), 
+            "updatedAt": datetime.now(), 
+            "name": name, 
+            "description": description, 
+            "brand": self.brand_id,
+            "currentPrice": currentPrice, 
+            "currency": "CAD",
+            "imageUrl": imageUrl, 
+            "source": link["base_url"], 
+            "link": link, 
+            "variations": variations, 
+            "components": components
+          }
 
           self.post_bike(newBike)
           self.bikes.append(newBike)
@@ -152,6 +181,7 @@ class Trek:
     print(self.bikes[:5])
 
   def get_bikes(self):
+    self.post_brand({"createdAt": datetime.now(), "updatedAt": datetime.now(), "name": "Trek", "website": "https://www.trekbikes.com/ca/en_CA/"})
     self.get_bike_links()
     while self.bike_count < self.result_count:
       self.scrape_bikes_selenium()
@@ -160,6 +190,7 @@ class Trek:
   
 
 # Example usage
-trek = Trek("https://www.trekbikes.com/ca/en_CA/bikes/road-bikes/c/B200/?pageSize=72&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#")
+trek_url = "https://www.trekbikes.com/ca/en_CA/bikes/c/B100/?pageSize=72&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#"
+trek = Trek(trek_url)
 trek.get_bikes()
 driver.quit()
