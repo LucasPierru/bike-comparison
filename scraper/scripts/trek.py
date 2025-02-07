@@ -217,14 +217,14 @@ class Trek:
 
       if spec_type != "Weight" and spec_type != "Weight limit":
         newSpec = {
-        "createdAt": datetime.now(), 
-        "updatedAt": datetime.now(), 
-        "name": spec_value, 
-        "type": spec_type, 
-        "brand": spec_brand,
-        "source": spec_link,
-        "affiliateLink": spec_link
-      }
+          "createdAt": datetime.now(), 
+          "updatedAt": datetime.now(), 
+          "name": spec_value, 
+          "type": spec_type, 
+          "brand": spec_brand,
+          "source": spec_link,
+          "affiliateLink": spec_link
+        }
       elif spec_type == "Weight": 
         weight = spec_value
       elif spec_type == "Weight limit": 
@@ -379,7 +379,7 @@ class Trek:
 # Example usage
 trek_url = "https://www.trekbikes.com/ca/en_CA/bikes/c/B100/?pageSize=24&page=0&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#"
 trek = Trek(trek_url)
-trek.get_bikes()
-""" bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
-trek.scrape_bike_details({"base_url": "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=", "color": "black"}, "", "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=black", "", bike) """
+""" trek.get_bikes() """
+bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
+trek.scrape_bike_details({"base_url": "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=", "color": "black"}, "", "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=black", "", bike)
 driver.quit()

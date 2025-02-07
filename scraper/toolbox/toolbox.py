@@ -24,21 +24,26 @@ def replace_query_param(url, param, new_value):
     return new_url
 
 def parse_sizes(text):
-    # Remove excess whitespace and newlines
+    # Normalize whitespace and remove "Size:" if present
     text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r'^Size:\s*', '', text, flags=re.I)
 
-    # Extract numeric sizes and additional details
-    match = re.search(r'([\d,\s]+)([A-Za-z].*)?', text)
-    
+    # Define valid size patterns (numbers & letter sizes like S, M, L, XL, XXL, etc.)
+    size_pattern = r'(?:(?:\d{2})|(?:XXL|XL|L|M|S))'
+
+    # Extract sizes at the **start** of the string
+    match = re.match(rf'^({size_pattern}(?:,\s*{size_pattern})*)(.*)', text)
+
     if match:
-        sizes = [s.strip() for s in match.group(1).split(',')]  # Convert sizes to a list
-        extra_info = match.group(2).strip() if match.group(2) else None  # Extra details
-        
+        size_text = match.group(1).strip()  # Extract size part
+        extra_info = match.group(2).strip() if match.group(2) else None  # Extract remaining details
+
+        # Split sizes properly while avoiding merging issues
+        sizes = [s.strip() for s in size_text.split(',') if s]
+
         return {
             "sizes": sizes,
-            "value": extra_info
+            "value": extra_info if extra_info else None
         }
 
     return {"sizes": [], "value": None}  # Default if no match
-
-
