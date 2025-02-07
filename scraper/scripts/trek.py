@@ -14,6 +14,7 @@ from pymongo import UpdateOne
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from models.bike import Bike
 from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes
 from db import get_database
 # Set up Selenium
@@ -32,8 +33,6 @@ class Trek:
   result_count = 1
   bike_count = 0
   brand_id = ""
-  variations = []
-  components = []
 
   def __init__(self, url, page=0):
     self.url = url
@@ -201,7 +200,6 @@ class Trek:
     try :
       spec_data = spec.find_element(By.TAG_NAME, "dl")
       spec_type = spec_data.find_element(By.TAG_NAME, "dt").get_attribute("innerText").strip().replace("*", "")
-      print(f"type: {spec_type}")
       spec_td = spec_data.find_element(By.TAG_NAME, "dd")
       spec_value = spec_td.get_attribute("innerText").strip()
 
@@ -216,8 +214,6 @@ class Trek:
 
       if "Size" in spec_value: 
         spec_value = parse_sizes(spec_value)
-
-      print(f"spec: {spec_type}")
 
       if spec_type != "Weight" and spec_type != "Weight limit":
         newSpec = {
@@ -266,26 +262,24 @@ class Trek:
         weight_limit = spec_value
     return newSpec, weight, weight_limit, spec_type
 
-  def scrape_bike_details(self, link, previous_url, base_url, next_url): 
+  def scrape_bike_details(self, link, previous_url, base_url, next_url, bike: Bike): 
     try:
       driver.get(base_url)
       time.sleep(3)
 
       if link["base_url"] != previous_url:
-        self.variations = []
-        self.components = []
         current_spec_type = ""
         header = driver.find_element(By.CLASS_NAME, "buying-zone__header")
-        name = header.find_element(By.CLASS_NAME, "buying-zone__title").text
+        bike.set_name(header.find_element(By.CLASS_NAME, "buying-zone__title").text)
         image = driver.find_element(By.CLASS_NAME, "swiper-lazy").get_attribute("src")
 
         if image is not None:
-          imageUrl = image.split("%20")[0]
+          bike.set_imageUrl(image.split("%20")[0])
 
         footer = driver.find_element(By.CLASS_NAME, "buying-zone__footer")
         priceSpan = footer.find_element(By.TAG_NAME, "span")
-        currentPrice = priceSpan.find_element(By.CLASS_NAME, "actual-price").text
-        description = footer.find_element(By.TAG_NAME, "p").text
+        bike.set_currentPrice(priceSpan.find_element(By.CLASS_NAME, "actual-price").text)
+        bike.set_description(footer.find_element(By.TAG_NAME, "p").text)
 
         try: 
           specs_container = driver.find_element(By.CLASS_NAME, "pdp-spec-collapse")
@@ -294,7 +288,11 @@ class Trek:
             newSpec, weight, weight_limit, spec_type = self.get_specs_1(spec, current_spec_type)
             current_spec_type = spec_type
             if newSpec != {}:
-              self.components.append(newSpec)
+              bike.append_component(newSpec)
+            if weight !="":
+              bike.set_weight(weight)
+            if weight_limit !="":
+              bike.set_weightLimit(weight_limit)
 
         except NoSuchElementException: 
           specs_section = driver.find_element(By.ID, "trekProductSpecificationsComponent")
@@ -304,7 +302,11 @@ class Trek:
             newSpec, weight, weight_limit, spec_type = self.get_specs_2(spec, current_spec_type)
             current_spec_type = spec_type
             if newSpec != {}:
-              self.components.append(newSpec)
+              bike.append_component(newSpec)
+            if weight !="":
+              bike.set_weight(weight)
+            if weight_limit !="":
+              bike.set_weightLimit(weight_limit)
                 
       size_elements = driver.find_elements(By.CLASS_NAME, "product-attribute-btn")
       sizes = []
@@ -313,30 +315,29 @@ class Trek:
       for size in size_elements:
         sizes.append(size.find_element(By.TAG_NAME, "span").text)
 
-      self.variations.append({"color": color, "sizes": sizes})
+      bike.append_variation({"color": color, "sizes": sizes})
       
       if link["base_url"] != next_url:
         bike_type_parts = link["base_url"].split("/")
         index = bike_type_parts.index("bikes")  # Find the position of "bikes"
         bike_type = bike_type_parts[index + 2].rstrip("s")
-        component_ids = self.post_components(self.components)
+        component_ids = self.post_components(bike.get_components())
         newBike = {
           "createdAt": datetime.now(), 
           "updatedAt": datetime.now(), 
-          "name": name, 
-          "description": description, 
+          "name": bike.get_name(), 
+          "description": bike.get_description(), 
           "brand": self.brand_id,
           "type": bike_type,
-          "currentPrice": currentPrice, 
+          "currentPrice": bike.get_currentPrice(), 
           "currency": "CAD",
-          "imageUrl": imageUrl, 
+          "imageUrl": bike.get_imageUrl(), 
           "source": link["base_url"], 
           "affiliateLink": link, 
-          "weight": weight,
-          "weightLimit": weight_limit,
-          "variations": self.variations, 
+          "weight": bike.get_weight(),
+          "weightLimit": bike.get_weightLimit(),
+          "variations": bike.get_variations(), 
         }
-        print(f"new bike: {newBike}")
         new_bike_id = self.post_bike(newBike)
         self.post_bike_components(new_bike_id, component_ids)
         self.bikes.append(newBike)
@@ -346,6 +347,7 @@ class Trek:
       print(f"Skipping a bike due to error {link} {e}")
 
   def scrape_bikes_selenium(self):
+    bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
     for previous, link, nxt in previous_and_next(self.bike_links):
       base_url = f"{link["base_url"]}{link["color"]}"
       if previous is not None:
@@ -357,8 +359,10 @@ class Trek:
         next_url = nxt["base_url"]
       else:
         next_url = ""
-    
-      self.scrape_bike_details(link, previous_url, base_url, next_url)
+
+      if link["base_url"] != previous_url: 
+        bike.reset_bike()
+      self.scrape_bike_details(link, previous_url, base_url, next_url, bike)
     print(f"Scraped {len(self.bikes)} bikes from {self.url}")
 
   def get_bikes(self):
@@ -376,4 +380,6 @@ class Trek:
 trek_url = "https://www.trekbikes.com/ca/en_CA/bikes/c/B100/?pageSize=24&page=0&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#"
 trek = Trek(trek_url)
 trek.get_bikes()
+""" bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
+trek.scrape_bike_details({"base_url": "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=", "color": "black"}, "", "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=black", "", bike) """
 driver.quit()
