@@ -4,11 +4,8 @@ const { Schema, model } = mongoose;
 const componentSchema = new Schema({
   createdAt: Date,
   updatedAt: Date,
-  name: String,
-  type: String,
-  brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
-  source: String,
-  affiliateLink: String,
+  bike: { type: mongoose.Schema.Types.ObjectId, ref: "Bike" },
+  component: { type: mongoose.Schema.Types.ObjectId, ref: "Component" },
 });
 
 const Component = model("Component", componentSchema);

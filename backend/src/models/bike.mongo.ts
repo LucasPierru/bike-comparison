@@ -21,12 +21,6 @@ const bikeSchema = new Schema({
       sizes: [String],
     },
   ],
-  components: [
-    {
-      type: String,
-      value: { type: mongoose.Schema.Types.ObjectId, ref: "Component" },
-    },
-  ],
 });
 
 const Bike = model("Bike", bikeSchema);
