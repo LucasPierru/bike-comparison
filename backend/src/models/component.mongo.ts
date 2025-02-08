@@ -6,6 +6,7 @@ const componentSchema = new Schema({
   updatedAt: Date,
   name: String,
   type: String,
+  sizes: [String],
   brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
   source: String,
   affiliateLink: String,

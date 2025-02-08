@@ -61,6 +61,7 @@ class Trek:
     component_names = [c["name"] for c in components]
     component_docs = component_collection.find({"name": {"$in": component_names}}, {"_id": 1})
     component_ids = [doc["_id"] for doc in component_docs]
+    
     return component_ids
 
   def post_bike_components(self, bike_id, component_ids):
@@ -69,10 +70,10 @@ class Trek:
       operations.append(UpdateOne(
         {"bike": bike_id, "component": component_id}, 
         {"$set": {
-          "createdAt": datetime.now(), 
-          "updatedAt": datetime.now(), 
-          "bike": bike_id, 
-          "component": component_id
+            "createdAt": datetime.now(), 
+            "updatedAt": datetime.now(), 
+            "bike": bike_id, 
+            "component": component_id,
           }
         }, 
         upsert=True)
@@ -128,6 +129,7 @@ class Trek:
     newSpec = {}
     weight = ""
     weight_limit = ""
+    spec_sizes = []
     try :
       spec_type = spec.find_element(By.TAG_NAME, "th").get_attribute("innerText").strip().replace("*", "")
       spec_td = spec.find_element(By.TAG_NAME, "td")
@@ -142,7 +144,9 @@ class Trek:
         spec_brand = ""
 
       if "Size" in spec_value: 
-        spec_value = parse_sizes(spec_value)
+        parsed_size = parse_sizes(spec_value)
+        spec_value = parsed_size["value"]
+        spec_sizes = parsed_size["sizes"]
 
       if spec_type != "Weight" and spec_type != "Weight limit":
         newSpec = {
@@ -152,7 +156,8 @@ class Trek:
         "type": spec_type, 
         "brand": spec_brand,
         "source": spec_link,
-        "affiliateLink": spec_link
+        "affiliateLink": spec_link,
+        "sizes": spec_sizes
       }
       elif spec_type == "Weight": 
         weight = spec_value
@@ -174,7 +179,9 @@ class Trek:
         spec_brand = ""
 
       if "Size" in spec_value: 
-        spec_value = parse_sizes(spec_value)
+        parsed_size = parse_sizes(spec_value)
+        spec_value = parsed_size["value"]
+        spec_sizes = parsed_size["sizes"]
 
       if spec_type != "Weight" and spec_type != "Weight limit":
           newSpec = {
@@ -184,7 +191,8 @@ class Trek:
             "type": spec_type, 
             "brand": spec_brand,
             "source": spec_link,
-            "affiliateLink": spec_link
+            "affiliateLink": spec_link,
+            "sizes": spec_sizes
           }
       elif spec_type == "Weight": 
         weight = spec_value
@@ -197,12 +205,12 @@ class Trek:
     newSpec = {}
     weight = ""
     weight_limit = ""
+    spec_sizes = []
     try :
       spec_data = spec.find_element(By.TAG_NAME, "dl")
       spec_type = spec_data.find_element(By.TAG_NAME, "dt").get_attribute("innerText").strip().replace("*", "")
       spec_td = spec_data.find_element(By.TAG_NAME, "dd")
       spec_value = spec_td.get_attribute("innerText").strip()
-
 
       try:
         spec_a = spec_td.find_element(By.TAG_NAME, "a")
@@ -213,7 +221,9 @@ class Trek:
         spec_brand = ""
 
       if "Size" in spec_value: 
-        spec_value = parse_sizes(spec_value)
+        parsed_size = parse_sizes(spec_value)
+        spec_value = parsed_size["value"]
+        spec_sizes = parsed_size["sizes"]
 
       if spec_type != "Weight" and spec_type != "Weight limit":
         newSpec = {
@@ -223,7 +233,8 @@ class Trek:
           "type": spec_type, 
           "brand": spec_brand,
           "source": spec_link,
-          "affiliateLink": spec_link
+          "affiliateLink": spec_link,
+          "sizes": spec_sizes
         }
       elif spec_type == "Weight": 
         weight = spec_value
@@ -244,7 +255,9 @@ class Trek:
         spec_brand = ""
 
       if "Size" in spec_value: 
-        spec_value = parse_sizes(spec_value)
+        parsed_size = parse_sizes(spec_value)
+        spec_value = parsed_size["value"]
+        spec_sizes = parsed_size["sizes"]
 
       if spec_type != "Weight" and spec_type != "Weight limit":
         newSpec = {
@@ -254,7 +267,8 @@ class Trek:
           "type": spec_type, 
           "brand": spec_brand,
           "source": spec_link,
-          "affiliateLink": spec_link
+          "affiliateLink": spec_link,
+          "sizes": spec_sizes
         }
       elif spec_type == "Weight": 
         weight = spec_value
@@ -321,7 +335,7 @@ class Trek:
         bike_type_parts = link["base_url"].split("/")
         index = bike_type_parts.index("bikes")  # Find the position of "bikes"
         bike_type = bike_type_parts[index + 2].rstrip("s")
-        component_ids = self.post_components(bike.get_components())
+        
         newBike = {
           "createdAt": datetime.now(), 
           "updatedAt": datetime.now(), 
@@ -339,6 +353,7 @@ class Trek:
           "variations": bike.get_variations(), 
         }
         new_bike_id = self.post_bike(newBike)
+        component_ids = self.post_components(bike.get_components())
         self.post_bike_components(new_bike_id, component_ids)
         self.bikes.append(newBike)
         print(f"progress: {len(self.bikes)}/{self.result_count}")
@@ -379,7 +394,7 @@ class Trek:
 # Example usage
 trek_url = "https://www.trekbikes.com/ca/en_CA/bikes/c/B100/?pageSize=24&page=0&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#"
 trek = Trek(trek_url)
-""" trek.get_bikes() """
-bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
-trek.scrape_bike_details({"base_url": "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=", "color": "black"}, "", "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=black", "", bike)
+trek.get_bikes()
+""" bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
+trek.scrape_bike_details({"base_url": "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=", "color": "black"}, "", "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=black", "", bike) """
 driver.quit()
