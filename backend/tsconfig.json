@@ -11,7 +11,11 @@
     "moduleResolution": "node", // Resolve modules in the Node.js style
     "resolveJsonModule": true, // Allow importing JSON files
     "types": ["node"], // Include Node.js type definitions
-    "typeRoots": ["./node_modules/@types", "./src/types"] // Include custom type declarations
+    "typeRoots": ["./node_modules/@types", "./src/types"], // Include custom type declarations
+    "paths": {
+      /* "@/*": ["./*"], */
+      "models/*": ["./src/models/*"]
+    }
   },
   "include": ["src/**/*.ts"], // Include all TypeScript files in the src folder
   "exclude": ["node_modules", "dist"] // Exclude node_modules and the output folder

@@ -1,40 +1,13 @@
 {
-  "name": "backend",
+  "name": "bike-comparison",
   "version": "1.0.0",
-  "main": "server.js",
+  "description": "This project is a bike comparison website that scrapes bike prices from various sources, stores the data in MongoDB, and displays it using a Next.js frontend with an Express API.",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "swc backend/src -d backend/dist && mkdir -p backend/dist/src && cp -R backend/dist/backend/src/* backend/dist/src && rm -r backend/dist/backend",
-    "start": "node backend/dist/src/server.js",
-    "dev": "nodemon --watch backend/src --ext ts --exec 'npm run build && npm start'"
+    "install-server": "npm install --prefix backend",
+    "server": "npm run dev --prefix backend ",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "bcrypt": "^5.1.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.13.0",
-    "mongoose": "^8.9.5",
-    "passport": "^0.7.0",
-    "passport-jwt": "^4.0.1",
-    "typescript": "^5.7.3"
-  },
-  "devDependencies": {
-    "@swc/cli": "^0.5.0",
-    "@swc/core": "^1.9.1",
-    "@types/bcrypt": "^5.0.2",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "@types/express-session": "^1.18.0",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^22.9.0",
-    "@types/passport-jwt": "^4.0.1",
-    "@types/passport-local": "^1.0.38",
-    "nodemon": "^3.1.7"
-  }
+  "author": "Lucas Pierru",
+  "license": "ISC"
 }
