@@ -26,7 +26,7 @@ db = get_database()
 bike_collection = db["bikes"]
 brand_collection = db["brands"]
 component_collection = db["components"]
-bike_component_collection = db["bikeComponents"]
+bike_component_collection = db["bikecomponents"]
 
 class Trek:
   bike_links = []
@@ -368,7 +368,7 @@ class Trek:
 
   def scrape_bikes_selenium(self):
     bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
-    for previous, link, nxt in previous_and_next(self.bike_links):
+    for previous, link, nxt in previous_and_next(self.bike_links[470:]):
       base_url = f"{link["base_url"]}{link["color"]}"
       if previous is not None:
         previous_url = previous["base_url"]
@@ -422,8 +422,8 @@ class Trek:
 # Example usage
 trek_url = "https://www.trekbikes.com/ca/en_CA/bikes/c/B100/?pageSize=24&page=0&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#"
 trek = Trek(trek_url)
-trek.pw_get_bike("https://www.trekbikes.com/ca/en_CA/bikes/mountain-bikes/trail-mountain-bikes/fuel-ex/fuel-ex-9-8-gx-axs-gen-6/p/36953/?colorCode=")
-# trek.get_bikes()
+""" trek.pw_get_bike("https://www.trekbikes.com/ca/en_CA/bikes/mountain-bikes/trail-mountain-bikes/fuel-ex/fuel-ex-9-8-gx-axs-gen-6/p/36953/?colorCode=") """
+trek.get_bikes()
 """ bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
 trek.scrape_bike_details({"base_url": "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=", "color": "black"}, "", "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=black", "", bike) """
 driver.quit()
