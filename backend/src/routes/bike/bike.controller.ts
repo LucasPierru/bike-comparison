@@ -39,7 +39,7 @@ export const httpGetBike = async (req: Request, res: Response) => {
     const components = bikeComponents.map(
       (bikeComponent) => bikeComponent.component
     );
-    const bike = await Bike.findById(id);
+    const bike = await Bike.findById(id).populate('brand');
     res.status(200).json({ ...bike?.toObject(), components });
   } catch (error) {
     console.log(error);

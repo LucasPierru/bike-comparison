@@ -1,4 +1,4 @@
-import mongoose, { SchemaTypes } from "mongoose";
+import mongoose, { SchemaTypes } from 'mongoose';
 const { Schema, model } = mongoose;
 
 const componentSchema = new Schema({
@@ -7,10 +7,10 @@ const componentSchema = new Schema({
   name: String,
   type: String,
   sizes: [String],
-  brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
+  brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand' },
   source: String,
-  affiliateLink: String,
+  affiliateLink: String
 });
 
-const Component = model("Component", componentSchema);
+const Component = model('Component', componentSchema);
 export default Component;

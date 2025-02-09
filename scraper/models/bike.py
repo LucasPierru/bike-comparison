@@ -1,4 +1,8 @@
-class Bike:
+from models.base_model import BaseModel
+
+class Bike(BaseModel):
+  collection_name = "bikes"
+
   def __init__ (self, name:str, description:str, brand, type:str, currentPrice, currency, imageUrl:str, source:str, affiliateLink, weight:str, weight_limit:str, variations, components):
     self.name = name
     self.description = description
