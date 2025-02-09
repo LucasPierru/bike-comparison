@@ -1,4 +1,4 @@
-import mongoose, { SchemaTypes } from "mongoose";
+import mongoose, { SchemaTypes } from 'mongoose';
 const { Schema, model } = mongoose;
 
 const bikeSchema = new Schema({
@@ -6,22 +6,27 @@ const bikeSchema = new Schema({
   updatedAt: Date,
   name: String,
   description: String,
-  brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
+  brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand' },
   type: String,
   currentPrice: Number,
   currency: String,
   imageUrl: String,
   source: String,
-  affiliateLink: String,
+  affiliateLink: {
+    base_url: String,
+    color: String
+  },
   weight: String,
   weightLimit: String,
   variations: [
     {
       color: String,
-      sizes: [String],
-    },
-  ],
+      sizes: [String]
+    }
+  ]
 });
 
-const Bike = model("Bike", bikeSchema);
+bikeSchema.index({ type: 'text' });
+
+const Bike = model('Bike', bikeSchema);
 export default Bike;

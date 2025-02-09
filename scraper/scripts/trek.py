@@ -5,7 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
+from playwright.sync_api import sync_playwright
 import time
 import sys
 import os
@@ -15,7 +16,7 @@ from pymongo import UpdateOne
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from models.bike import Bike
-from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes
+from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes, extract_price
 from db import get_database
 # Set up Selenium
 options = webdriver.ChromeOptions()
@@ -84,7 +85,9 @@ class Trek:
     existing_bike = bike_collection.find_one({"source": bike["source"]})
 
     if existing_bike:
-        print(f"Bike already exists in DB: {bike['name']}")
+        print(f"Bike already exists in DB: {bike['name']}, updating")
+        bike.pop("createdAt", None) 
+        bike_collection.update_one({"_id": existing_bike["_id"]}, {"$set": bike})
         return existing_bike["_id"]
     else:
         new_bike = bike_collection.insert_one(bike)
@@ -279,7 +282,8 @@ class Trek:
   def scrape_bike_details(self, link, previous_url, base_url, next_url, bike: Bike): 
     try:
       driver.get(base_url)
-      time.sleep(3)
+      WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "pdp-product-details")))
+      # time.sleep(3)
 
       if link["base_url"] != previous_url:
         current_spec_type = ""
@@ -292,7 +296,7 @@ class Trek:
 
         footer = driver.find_element(By.CLASS_NAME, "buying-zone__footer")
         priceSpan = footer.find_element(By.TAG_NAME, "span")
-        bike.set_currentPrice(priceSpan.find_element(By.CLASS_NAME, "actual-price").text)
+        bike.set_currentPrice(extract_price(priceSpan.find_element(By.CLASS_NAME, "actual-price").text))
         bike.set_description(footer.find_element(By.TAG_NAME, "p").text)
 
         try: 
@@ -327,7 +331,8 @@ class Trek:
       color = link["color"]
 
       for size in size_elements:
-        sizes.append(size.find_element(By.TAG_NAME, "span").text)
+        if "unavailable" not in size.get_attribute("class"):
+          sizes.append(size.find_element(By.TAG_NAME, "span").text)
 
       bike.append_variation({"color": color, "sizes": sizes})
       
@@ -388,13 +393,37 @@ class Trek:
       print(f"{len(self.bike_links)} links")
       print(f"links progress: {self.bike_count}/{self.result_count}")
     self.scrape_bikes_selenium()
-  
-  
+
+  def pw_get_bike(self, url):
+    with sync_playwright() as pw:
+      browser = pw.chromium.launch(headless=True)
+      page = browser.new_page()
+
+      page.goto(url)  # go to url
+      content = page.content()  # Gets the full HTML content of the page
+      page.wait_for_selector("div[class=pdp-product-details]")  # wait for content to load
+
+      parsed = []
+      sizes = page.query_selector_all(".product-attribute-btn")
+      for size in sizes:
+          if "unavailable" not in size.get_attribute("class"):
+            parsed.append(size.inner_text())
+          """ parsed.append({
+              "title": box.query_selector("h3").inner_text(),
+              "url": box.query_selector(".tw-link").get_attribute("href"),
+              "username": box.query_selector(".tw-link").inner_text(),
+              "viewers": box.query_selector(".tw-media-card-stat").inner_text(),
+              # tags are not always present:
+              "tags": box.query_selector(".tw-tag").inner_text() if box.query_selector(".tw-tag") else None,
+          }) """
+      print(parsed)
+      browser.close()
 
 # Example usage
 trek_url = "https://www.trekbikes.com/ca/en_CA/bikes/c/B100/?pageSize=24&page=0&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#"
 trek = Trek(trek_url)
-trek.get_bikes()
+trek.pw_get_bike("https://www.trekbikes.com/ca/en_CA/bikes/mountain-bikes/trail-mountain-bikes/fuel-ex/fuel-ex-9-8-gx-axs-gen-6/p/36953/?colorCode=")
+# trek.get_bikes()
 """ bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
 trek.scrape_bike_details({"base_url": "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=", "color": "black"}, "", "https://www.trekbikes.com/ca/en_CA/bikes/electric-bikes/electric-road-bikes/domane-slr/domane-slr-7-axs/p/44607/?colorCode=black", "", bike) """
 driver.quit()

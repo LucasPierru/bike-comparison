@@ -47,3 +47,8 @@ def parse_sizes(text):
         }
 
     return {"sizes": [], "value": None}  # Default if no match
+
+def extract_price(price_str):
+    # Remove the dollar sign and commas
+    price_cleaned = re.sub(r'[^\d.]', '', price_str)
+    return float(price_cleaned)

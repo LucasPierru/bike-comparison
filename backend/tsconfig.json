@@ -13,8 +13,7 @@
     "types": ["node"], // Include Node.js type definitions
     "typeRoots": ["./node_modules/@types", "./src/types"], // Include custom type declarations
     "paths": {
-      /* "@/*": ["./*"], */
-      "models/*": ["./src/models/*"]
+      "@/*": ["./*"]
     }
   },
   "include": ["src/**/*.ts"], // Include all TypeScript files in the src folder

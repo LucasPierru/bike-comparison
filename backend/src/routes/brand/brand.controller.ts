@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Brand from 'models/brand.mongo';
+import Brand from '../../models/brand.mongo';
 
 export const httpGetBrands = async (req: Request, res: Response) => {
   try {
