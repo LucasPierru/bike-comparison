@@ -7,7 +7,7 @@ const componentSchema = new Schema({
   name: String,
   type: String,
   sizes: [String],
-  brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand' },
+  brand: { type: Schema.Types.ObjectId, ref: 'Brand' },
   source: String,
   affiliateLink: String
 });

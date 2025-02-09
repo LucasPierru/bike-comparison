@@ -35,7 +35,12 @@ export const httpGetBike = async (req: Request, res: Response) => {
   try {
     const bikeComponents = await BikeComponent.find({
       bike: bikeId
-    }).populate('component');
+    }).populate({
+      path: 'component',
+      populate: {
+        path: 'brand'
+      }
+    });
     const components = bikeComponents.map(
       (bikeComponent) => bikeComponent.component
     );

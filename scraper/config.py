@@ -53,6 +53,7 @@ BRANDS_LIST = [
   {"name": "SDG Components", "website": "https://www.sdgcomponents.com"},
   {"name": "Spank", "website": "https://www.spank-ind.com"},
   {"name": "Crankbrothers", "website": "https://www.crankbrothers.com"},
+  {"name": "KMC", "website": "https://www.kmcchain.com"},
   
   {"name": "3T Cycling", "website": "https://www.3t.bike"},
   {"name": "absoluteBLACK", "website": "https://absoluteblack.cc"},

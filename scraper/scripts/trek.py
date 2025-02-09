@@ -16,7 +16,7 @@ from pymongo import UpdateOne
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from models.bike import Bike
-from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes, extract_price
+from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes, extract_price, find_brand_in_component
 from db import get_database
 # Set up Selenium
 options = webdriver.ChromeOptions()
@@ -34,6 +34,7 @@ class Trek:
   result_count = 1
   bike_count = 0
   brand_id = ""
+  brands = []
 
   def __init__(self, url, page=0):
     self.url = url
@@ -42,6 +43,10 @@ class Trek:
   def get_brand(self, name):
     existing_brand = brand_collection.find_one({"name": name})
     self.brand_id = existing_brand["_id"]
+
+  def get_brands(self):
+    brands = brand_collection.find()
+    self.brands = brands.to_list()
 
   def post_brand(self, brand):
     existing_brand = brand_collection.find_one({"name": brand["name"]})
@@ -144,7 +149,11 @@ class Trek:
         spec_brand = self.brand_id
       except NoSuchElementException:
         spec_link = ""
-        spec_brand = ""
+        brand = find_brand_in_component(spec_value, self.brands)
+        if brand is not None:
+          spec_brand = brand["_id"]
+        else:
+          spec_brand = None
 
       if "Size" in spec_value: 
         parsed_size = parse_sizes(spec_value)
@@ -179,7 +188,11 @@ class Trek:
         spec_brand = self.brand_id
       except NoSuchElementException:
         spec_link = ""
-        spec_brand = ""
+        brand = find_brand_in_component(spec_value, self.brands)
+        if brand is not None:
+          spec_brand = brand["_id"]
+        else:
+          spec_brand = None
 
       if "Size" in spec_value: 
         parsed_size = parse_sizes(spec_value)
@@ -221,7 +234,11 @@ class Trek:
         spec_brand = self.brand_id
       except NoSuchElementException:
         spec_link = ""
-        spec_brand = ""
+        brand = find_brand_in_component(spec_value, self.brands)
+        if brand is not None:
+          spec_brand = brand["_id"]
+        else:
+          spec_brand = None
 
       if "Size" in spec_value: 
         parsed_size = parse_sizes(spec_value)
@@ -255,7 +272,11 @@ class Trek:
         spec_brand = self.brand_id
       except NoSuchElementException:
         spec_link = ""
-        spec_brand = ""
+        brand = find_brand_in_component(spec_value, self.brands)
+        if brand is not None:
+          spec_brand = brand["_id"]
+        else:
+          spec_brand = None
 
       if "Size" in spec_value: 
         parsed_size = parse_sizes(spec_value)
@@ -368,7 +389,7 @@ class Trek:
 
   def scrape_bikes_selenium(self):
     bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
-    for previous, link, nxt in previous_and_next(self.bike_links[470:]):
+    for previous, link, nxt in previous_and_next(self.bike_links):
       base_url = f"{link["base_url"]}{link["color"]}"
       if previous is not None:
         previous_url = previous["base_url"]
@@ -387,6 +408,7 @@ class Trek:
 
   def get_bikes(self):
     self.post_brand({"createdAt": datetime.now(), "updatedAt": datetime.now(), "name": "Trek", "website": "https://www.trekbikes.com/ca/en_CA/"})
+    self.get_brands()
     while self.bike_count < self.result_count:
       self.get_bike_links()
       self.go_to_next_page()

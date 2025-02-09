@@ -52,3 +52,11 @@ def extract_price(price_str):
     # Remove the dollar sign and commas
     price_cleaned = re.sub(r'[^\d.]', '', price_str)
     return float(price_cleaned)
+
+def find_brand_in_component(component_string, bike_brands):
+    # Loop through each brand object and check if the name exists in the component string
+    for brand in bike_brands:
+        # Check if the brand name (case-insensitive) is present in the component string
+        if re.search(r'\b' + re.escape(brand['name']) + r'\b', component_string, re.IGNORECASE):
+            return brand  # Return the full brand object
+    return None  # If no brand is found
