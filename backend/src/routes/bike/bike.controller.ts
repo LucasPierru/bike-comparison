@@ -21,7 +21,8 @@ export const httpGetBikes = async (req: Request, res: Response) => {
     }
     const bikes = await bikeRequest
       .limit(perPageNum)
-      .skip(pageNum * perPageNum);
+      .skip(pageNum * perPageNum)
+      .populate('brand');
     res.status(200).json({ bikes });
   } catch (error) {
     res.status(500).json({ message: `Cannot access bikes`, error });
@@ -35,17 +36,24 @@ export const httpGetBike = async (req: Request, res: Response) => {
   try {
     const bikeComponents = await BikeComponent.find({
       bike: bikeId
-    }).populate({
-      path: 'component',
-      populate: {
-        path: 'brand'
-      }
-    });
+    })
+      .populate({
+        path: 'component',
+        populate: {
+          path: 'brand'
+        }
+      })
+      .populate({
+        path: 'bike',
+        populate: {
+          path: 'brand'
+        }
+      });
     const components = bikeComponents.map(
       (bikeComponent) => bikeComponent.component
     );
-    const bike = await Bike.findById(id).populate('brand');
-    res.status(200).json({ ...bike?.toObject(), components });
+    const bike = bikeComponents[0].toObject().bike;
+    res.status(200).json({ ...bike, components });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: `Cannot access bikes`, error });
