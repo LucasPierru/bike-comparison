@@ -7,7 +7,7 @@ This project is a bike comparison website that scrapes bike prices from various 
 ## Folder Structure
 
 ```
-bike-comparison-website/
+bike-comparison/
 │── backend/                  # Express API
 │   ├── models/               # Mongoose models
 │   │   ├── Bike.js

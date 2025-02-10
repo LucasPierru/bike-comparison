@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # ✅ Express API Service
+  api:
+    build: ./backend
+    container_name: bike-comparator-api
+    restart: always
+    depends_on:
+      - mongodb
+    ports:
+      - "4000:4000"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - NODE_ENV=production
+    volumes:
+      - ./backend:/app
+
+  # ✅ Next.js Frontend
+  frontend:
+    build: ./frontend
+    container_name: bike-comparator
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:4000
+
+  # ✅ Python Scraper (Runs Once a Day)
+  scraper:
+    build: ./scraper
+    container_name: bike-comparator-scraper
+    depends_on:
+      - mongodb
+    restart: "no"
+    volumes:
+      - ./scraper:/app
+    environment:
+      - MONGO_URI=${MONGO_URI}
+    command: ["python", "scripts/trek.py"]
+
+volumes:
+  mongo-data:
