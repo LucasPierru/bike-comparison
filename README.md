@@ -116,6 +116,44 @@ For JavaScript-heavy sites:
 playwright
 ```
 
+### 3. Deploy application on DigitalOcean
+
+##### Open the cron editor:
+
+```
+ssh root@digital_ocean_droplet_ip
+```
+
+Add the following lines to run update, upgrade and install docker:
+
+```
+sudo apt update && sudo apt upgrade -y
+
+```
+
+```
+sudo apt install docker.io -y
+sudo apt install docker-compose -y
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+##### Clone the Github repository (Check the personal access token):
+
+```
+git clone your-repo-url.git bike-comparison
+cd bike-comparison
+```
+
+##### Deploy the backend with docker:
+
+```
+cd backend
+nano .env //add all the environement variables
+docker build -t bike-api .
+docker run -d -p 4000:4000 --env-file .env --name bike-api bike-api
+```
+
 ## Next Steps
 
 - Set up Express API to serve scraped data
