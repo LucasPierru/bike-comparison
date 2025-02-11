@@ -2,6 +2,8 @@ import Image from "next/image";
 import { ExternalLink, Tag } from "lucide-react";
 import { Bike } from "@/types/bike.types";
 import Link from "next/link";
+import { getTypeNameFromSlug } from "@/lib/utils";
+import { Card } from "../card/card";
 
 interface BikeCardProps {
   bike: Bike;
@@ -9,7 +11,7 @@ interface BikeCardProps {
 
 export function BikeCard({ bike }: BikeCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <Card>
       <div className="relative w-full h-64">
         <Image
           src={bike.imageUrl}
@@ -28,7 +30,7 @@ export function BikeCard({ bike }: BikeCardProps) {
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold">{bike.brand.name}</h3>
           <span className="text-sm px-2 py-1 bg-gray-100 rounded-full">
-            {bike.type}
+            {getTypeNameFromSlug(bike.type)}
           </span>
         </div>
         <p className="text-gray-600 mb-2">{bike.name}</p>
@@ -71,6 +73,6 @@ export function BikeCard({ bike }: BikeCardProps) {
           View Deal <ExternalLink className="ml-2 h-4 w-4" />
         </Link>
       </div>
-    </div>
+    </Card>
   );
 }

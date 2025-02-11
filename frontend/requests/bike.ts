@@ -19,3 +19,20 @@ export const getBikes = async (): Promise<{
     return { bikes: null, error };
   }
 };
+
+export const getBikeTypes = async (): Promise<{
+  bikeTypes: string[] | null;
+  error: unknown;
+}> => {
+  try {
+    const response = await api("/v1/bike/types", {
+      method: "GET",
+    });
+    const data = await response.json();
+    const { bikeTypes, error } = data;
+    if (error) throw error;
+    return { bikeTypes, error: null };
+  } catch (error) {
+    return { bikeTypes: null, error };
+  }
+};

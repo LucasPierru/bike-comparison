@@ -59,3 +59,13 @@ export const httpGetBike = async (req: Request, res: Response) => {
     res.status(500).json({ bike: null, error });
   }
 };
+
+export const httpGetBikeTypes = async (req: Request, res: Response) => {
+  try {
+    const bikeTypes = await Bike.distinct('type');
+    res.status(200).json({ bikeTypes, error: null });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ bikeTypes: null, error });
+  }
+};
