@@ -23,9 +23,9 @@ export const httpGetBikes = async (req: Request, res: Response) => {
       .limit(perPageNum)
       .skip(pageNum * perPageNum)
       .populate('brand');
-    res.status(200).json({ bikes });
+    res.status(200).json({ bikes, error: null });
   } catch (error) {
-    res.status(500).json({ message: `Cannot access bikes`, error });
+    res.status(500).json({ bikes: null, error });
   }
 };
 
@@ -53,9 +53,9 @@ export const httpGetBike = async (req: Request, res: Response) => {
       (bikeComponent) => bikeComponent.component
     );
     const bike = bikeComponents[0].toObject().bike;
-    res.status(200).json({ ...bike, components });
+    res.status(200).json({ bike: { ...bike, components }, error: null });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: `Cannot access bikes`, error });
+    res.status(500).json({ bike: null, error });
   }
 };

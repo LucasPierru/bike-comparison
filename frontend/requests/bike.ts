@@ -10,9 +10,6 @@ export const getBikes = async (): Promise<{
   try {
     const response = await api("/v1/bike", {
       method: "GET",
-      /* headers: {
-          authorization: `Bearer ${token.value}`
-        } */
     });
     const data = await response.json();
     const { bikes, error } = data;
