@@ -20,12 +20,19 @@ from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes,
 from db import get_database
 # Set up Selenium
 options = webdriver.ChromeOptions()
+options.add_argument("enable-automation");
 options.add_argument("--headless")  # Run without opening a browser
+options.add_argument("--window-size=1920,1080");
 options.add_argument("--no-sandbox")  # Required for Docker
+options.add_argument("--disable-extensions")  # Required for Docker
 options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
+options.add_argument("--dns-prefetch-disable");
 options.add_argument("--disable-gpu")  # Disable GPU acceleration
-options.add_argument("--remote-debugging-port=9222")  # Useful for debugging
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+service = Service("/usr/bin/chromedriver")  
+
+driver = webdriver.Chrome(service=service, options=options)
+
 db = get_database()
 bike_collection = db["bikes"]
 brand_collection = db["brands"]
