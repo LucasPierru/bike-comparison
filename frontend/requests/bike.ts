@@ -3,14 +3,24 @@
 import { Bike } from "@/types/bike.types";
 import { api } from "./api";
 
-export const getBikes = async (): Promise<{
+export const getBikes = async (
+  type?: string,
+  minPrice?: number,
+  maxPrice?: number
+): Promise<{
   bikes: Bike[] | null;
   error: unknown;
 }> => {
+  console.log({ type, minPrice, maxPrice });
   try {
-    const response = await api("/v1/bike", {
-      method: "GET",
-    });
+    const response = await api(
+      `/v1/bike?type=${type || ""}&minPrice=${minPrice || ""}&maxPrice=${
+        maxPrice || ""
+      }`,
+      {
+        method: "GET",
+      }
+    );
     const data = await response.json();
     const { bikes, error } = data;
     if (error) throw error;

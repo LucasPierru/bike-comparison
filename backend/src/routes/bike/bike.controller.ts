@@ -4,22 +4,27 @@ import BikeComponent from '../../models/bikeComponent.mongo';
 import { Types } from 'mongoose';
 
 export const httpGetBikes = async (req: Request, res: Response) => {
-  const { perPage, page, search } = req.query;
+  const { perPage, page, search, type, minPrice, maxPrice } = req.query;
 
   const perPageNum = Number(perPage) || 10;
   const pageNum = Number(page) || 0;
 
-  let bikeRequest;
+  const query: any = {
+    currentPrice: { $gte: minPrice || 0, $lte: maxPrice || 50000 }
+  };
+
+  if (type) {
+    query.type = type;
+  }
+
+  if (search) {
+    query.$text = { $search: search as string };
+  }
+
+  console.log({ perPage, page, search, type, minPrice, maxPrice });
 
   try {
-    if (search) {
-      bikeRequest = Bike.find({
-        $text: { $search: search as string }
-      });
-    } else {
-      bikeRequest = Bike.find({});
-    }
-    const bikes = await bikeRequest
+    const bikes = await Bike.find(query)
       .limit(perPageNum)
       .skip(pageNum * perPageNum)
       .populate('brand');

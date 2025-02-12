@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ExternalLink, Tag } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Bike } from "@/types/bike.types";
 import Link from "next/link";
 import { getTypeNameFromSlug } from "@/lib/utils";
