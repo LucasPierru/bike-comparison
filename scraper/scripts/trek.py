@@ -97,8 +97,9 @@ class Trek:
       browser = pw.chromium.launch(headless=True)
       page = browser.new_page()
 
-      main_url = replace_query_param(self.url, "page", self.page)
       page.goto(main_url)  # go to url
+
+      main_url = replace_query_param(self.url, "page", self.page)
       page.wait_for_selector(".searchresultslistcomponent")  # wait for content to load
 
       if self.page == 0:
@@ -346,7 +347,11 @@ class Trek:
       browser = pw.chromium.launch(headless=True)
       page = browser.new_page()
 
-      page.goto(base_url)  # go to url
+      
+      # Increase timeout (e.g., 60s instead of 30s)
+      page.set_default_timeout(60000)  # 60 seconds
+      page.goto(base_url, wait_until="load")  # go to url
+      
       page.wait_for_selector("div[class=pdp-product-details]")  # wait for content to load
 
       if link["base_url"] != previous_url:
