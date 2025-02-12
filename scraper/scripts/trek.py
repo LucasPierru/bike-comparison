@@ -94,7 +94,7 @@ class Trek:
 
   def get_bike_links(self):
     with sync_playwright() as pw:
-      browser = pw.chromium.launch(headless=True)
+      browser = pw.chromium.launch(headless=False)
       page = browser.new_page()
 
       main_url = replace_query_param(self.url, "page", self.page)
