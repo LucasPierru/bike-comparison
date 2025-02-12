@@ -21,6 +21,10 @@ from db import get_database
 # Set up Selenium
 options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run without opening a browser
+options.add_argument("--no-sandbox")  # Required for Docker
+options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
+options.add_argument("--disable-gpu")  # Disable GPU acceleration
+options.add_argument("--remote-debugging-port=9222")  # Useful for debugging
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 db = get_database()
 bike_collection = db["bikes"]
