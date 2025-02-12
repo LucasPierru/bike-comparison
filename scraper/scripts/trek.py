@@ -99,6 +99,9 @@ class Trek:
 
       main_url = replace_query_param(self.url, "page", self.page)
       page.goto(main_url)  # go to url
+      page.set_extra_http_headers({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+      })
 
       page.wait_for_selector(".searchresultslistcomponent")  # wait for content to load
 
