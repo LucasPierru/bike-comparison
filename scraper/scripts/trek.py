@@ -23,10 +23,9 @@ options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run without opening a browser
 options.add_argument("--no-sandbox")  # Required for Docker
 options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
+options.add_argument("--disable-gpu")  # Disable GPU acceleration
+options.add_argument("--remote-debugging-port=9222")  # Useful for debugging
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-# Increase timeout
-driver.set_page_load_timeout(60)  # Increase if needed
-
 db = get_database()
 bike_collection = db["bikes"]
 brand_collection = db["brands"]
@@ -110,7 +109,7 @@ class Trek:
   def get_bike_links(self):
     main_url = replace_query_param(self.url, "page", self.page)
     driver.get(main_url)
-    WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "product-list__item")))
+    WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "product-list__item")))
 
     if self.page == 0:
       self.result_count = int(driver.find_element(By.ID, "results-count--product").text.split(" ")[0])
