@@ -8,7 +8,6 @@ export default async function Home({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  console.log({ params: await searchParams });
   const { type, minPrice, maxPrice } = await searchParams;
 
   const { bikes } = await getBikes(type as string);

@@ -11,7 +11,6 @@ export const getBikes = async (
   bikes: Bike[] | null;
   error: unknown;
 }> => {
-  console.log({ type, minPrice, maxPrice });
   try {
     const response = await api(
       `/v1/bike?type=${type || ""}&minPrice=${minPrice || ""}&maxPrice=${
@@ -24,6 +23,7 @@ export const getBikes = async (
     const data = await response.json();
     const { bikes, error } = data;
     if (error) throw error;
+    console.log({ bikes, error });
     return { bikes, error: null };
   } catch (error) {
     return { bikes: null, error };
