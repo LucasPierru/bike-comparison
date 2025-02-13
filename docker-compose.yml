@@ -3,7 +3,8 @@ version: '3.8'
 services:
   # ✅ Express API Service
   api:
-    build: ./backend
+    build: 
+      context: ./backend
     container_name: bike-api
     restart: always
     env_file:
@@ -15,7 +16,8 @@ services:
 
   # ✅ Next.js Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
     container_name: bike-frontend
     restart: always
     env_file:
