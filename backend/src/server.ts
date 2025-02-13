@@ -12,7 +12,7 @@ const startServer = async () => {
     res.send('Hello World!');
   });
 
-  server.listen(4000, '0.0.0.0', () => {
+  server.listen(PORT as number, '0.0.0.0', () => {
     console.log(`Server running in 4000`);
   });
 };
