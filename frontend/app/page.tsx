@@ -14,10 +14,11 @@ export default async function Home({
   const { bikes } = await getBikes(type as string);
   const { bikeTypes } = await getBikeTypes();
 
-  const types = bikeTypes!.map((type) => ({
-    name: getTypeNameFromSlug(type),
-    value: type,
-  }));
+  const types =
+    bikeTypes?.map((type) => ({
+      name: getTypeNameFromSlug(type),
+      value: type,
+    })) || [];
 
   const bikeType = type || "all";
   const min = Number(minPrice) || 0;
