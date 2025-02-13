@@ -154,6 +154,15 @@ docker build -t bike-api .
 docker run -d -p 4000:4000 --env-file .env --name bike-api bike-api
 ```
 
+##### Deploy the backend with docker:
+
+```
+cd frontend
+nano .env //add all the environement variables
+docker build -t bike-frontend .
+docker run -d -p 3000:3000 --env-file .env --name bike-frontend bike-frontend
+```
+
 ##### Deploy the scraper with docker:
 
 ```
@@ -161,6 +170,12 @@ cd scraper
 nano config.py //add all the environement variables
 docker build -t bike-scraper .
 docker run bike-scraper
+```
+
+##### Deploy the app with docker compose:
+
+```
+docker-compose up --build -d
 ```
 
 ##### Run a cronjob to scrape data every day:
@@ -267,9 +282,8 @@ sudo systemctl restart nginx
 
 ## Next Steps
 
-- Set up Express API to serve scraped data
-- Connect MongoDB to store bike data
-- Develop the Next.js frontend to display bike comparisons
+- Update SEO features
+- Add github workflow to automate deployment
 
 ## Contributors
 
