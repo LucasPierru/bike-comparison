@@ -10,6 +10,8 @@ services:
       - ./backend/.env
     ports:
       - "4000:4000"
+    volumes:
+      - ./backend:/app
 
   # ✅ Next.js Frontend
   frontend:
