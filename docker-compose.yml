@@ -25,11 +25,6 @@ services:
     ports:
       - "3000:3000"
 
-  # ✅ Python Scraper (Runs Once a Day)
-  scraper:
-    build: ./scraper
-    container_name: bike-scraper
-    restart: "always"
   nginx:
     image: nginx:latest
     container_name: nginx
