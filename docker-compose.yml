@@ -7,7 +7,7 @@ services:
     container_name: bike-api
     restart: always
     env_file:
-      - /backend/.env
+      - ./backend/.env
     ports:
       - "4000:4000"
     volumes:
@@ -19,7 +19,7 @@ services:
     container_name: bike-frontend
     restart: always
     env_file:
-      - /frontend/.env
+      - ./frontend/.env
     depends_on:
       - api
     ports:
