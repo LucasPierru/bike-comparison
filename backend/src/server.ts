@@ -3,6 +3,7 @@ import app from './app';
 import { mongoConnect } from './services/mongo';
 
 const server = createServer(app);
+const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
   await mongoConnect();

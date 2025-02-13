@@ -6,11 +6,12 @@ import { Filters } from "@/components/filters/filters";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ type: string; minPrice: number; maxPrice: number }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  console.log({ params: await searchParams });
   const { type, minPrice, maxPrice } = await searchParams;
 
-  const { bikes } = await getBikes(type);
+  const { bikes } = await getBikes(type as string);
   const { bikeTypes } = await getBikeTypes();
 
   const types = bikeTypes!.map((type) => ({
@@ -19,8 +20,8 @@ export default async function Home({
   }));
 
   const bikeType = type || "all";
-  const min = minPrice || 0;
-  const max = maxPrice || 20000;
+  const min = Number(minPrice) || 0;
+  const max = Number(maxPrice) || 20000;
 
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
@@ -28,7 +29,7 @@ export default async function Home({
         <div className="col-span-full">
           <Filters
             types={types}
-            selectedType={bikeType}
+            selectedType={bikeType as string}
             priceRange={[min, max]}
           />
         </div>
