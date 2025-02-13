@@ -36,6 +36,6 @@ services:
       - api
       - frontend
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/nginx/sites-available/default:/etc/nginx/sites-available/default:ro
       - ./certbot/www:/var/www/certbot/:ro
       - ./certbot/conf:/etc/letsencrypt
