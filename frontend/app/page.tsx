@@ -25,7 +25,7 @@ export default async function Home({
 
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
-      <main className="grid grid-cols-4 gap-8 row-start-2 items-center sm:items-start">
+      <main className="grid grid-cols1 md:grid-cols-2 xl:grid-cols-4 gap-8 row-start-2 items-center sm:items-start">
         <div className="col-span-full">
           <Filters
             types={types}
