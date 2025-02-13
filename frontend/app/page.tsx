@@ -10,7 +10,7 @@ export default async function Home({
 }) {
   const { type, minPrice, maxPrice } = await searchParams;
 
-  const { bikes, error } = await getBikes(type);
+  const { bikes } = await getBikes(type);
   const { bikeTypes } = await getBikeTypes();
 
   const types = bikeTypes!.map((type) => ({
