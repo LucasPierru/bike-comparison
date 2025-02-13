@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lexend } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,6 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <Script
+        type="text/javascript"
+        src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=6ee4cd8e19971ad0d6c26337b68b5d01d8a5851b"
+      />
       <body className={`${lexend.className}`}>{children}</body>
     </html>
   );
