@@ -21,8 +21,6 @@ export const httpGetBikes = async (req: Request, res: Response) => {
     query.$text = { $search: search as string };
   }
 
-  console.log({ perPage, page, search, type, minPrice, maxPrice });
-
   try {
     const bikes = await Bike.find(query)
       .limit(perPageNum)

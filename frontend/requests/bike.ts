@@ -22,7 +22,6 @@ export const getBikes = async (
     );
     const data = await response.json();
     const { bikes, error } = data;
-    console.log({ bikes, error });
     if (error) throw error;
     return { bikes, error: null };
   } catch (error) {

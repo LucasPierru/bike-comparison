@@ -7,7 +7,5 @@ export const api = async (endpoint: string, options: RequestInit) => {
     headers: { "x-api-key": API_KEY },
   };
 
-  console.log({ API_BASE_URL, API_KEY });
-
   return fetch(`${API_BASE_URL}${endpoint}`, opts);
 };
