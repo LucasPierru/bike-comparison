@@ -347,10 +347,12 @@ class Trek:
 
   def pw_get_bike(self, link, previous_url, base_url, next_url, bike: Bike):
     with sync_playwright() as pw:
-      browser = pw.chromium.launch(headless=True)
+      browser = pw.chromium.launch(headless=True, args=["--disable-gpu", "--no-sandbox"])
       page = browser.new_page()
+      page.set_extra_http_headers({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+      })
 
-      
       # Increase timeout (e.g., 60s instead of 30s)
       page.set_default_timeout(60000)  # 60 seconds
       page.goto(base_url, wait_until="load")  # go to url
