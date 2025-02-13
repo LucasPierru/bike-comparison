@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import time
 import sys
 import os
@@ -355,7 +355,15 @@ class Trek:
 
       # Increase timeout (e.g., 60s instead of 30s)
       page.set_default_timeout(60000)  # 60 seconds
-      page.goto(base_url, wait_until="load")  # go to url
+      try: 
+        page.goto(base_url, wait_until="load")  # go to url
+      except PlaywrightTimeoutError:
+        try:
+          time.sleep(5)  # Wait before retrying
+          page.goto(base_url, wait_until="DOMContentLoaded")  # go to url
+        except PlaywrightTimeoutError:
+          browser.close()
+          return
 
       page.wait_for_selector("div[class=pdp-product-details]")  # wait for content to load
 

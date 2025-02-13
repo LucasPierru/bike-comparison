@@ -154,6 +154,22 @@ docker build -t bike-api .
 docker run -d -p 4000:4000 --env-file .env --name bike-api bike-api
 ```
 
+##### Deploy the scraper with docker:
+
+```
+cd scraper
+nano config.py //add all the environement variables
+docker build -t bike-scraper .
+docker run bike-scraper
+```
+
+##### Run a cronjob to scrape data every day:
+
+```
+crontab -e
+0 3 * * * docker run bike-scraper
+```
+
 ## Next Steps
 
 - Set up Express API to serve scraped data
