@@ -24,18 +24,3 @@ services:
       - api
     ports:
       - "3000:3000"
-
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - api
-      - frontend
-    volumes:
-      - /etc/nginx/sites-available/default:/etc/nginx/sites-available/default:ro
-      - ./certbot/www:/var/www/certbot/:ro
-      - ./certbot/conf:/etc/letsencrypt
