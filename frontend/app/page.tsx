@@ -6,7 +6,7 @@ import { Filters } from "@/components/filters/filters";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { type: string; minPrice: number; maxPrice: number };
+  searchParams: Promise<{ type: string; minPrice: number; maxPrice: number }>;
 }) {
   const { type, minPrice, maxPrice } = await searchParams;
 
