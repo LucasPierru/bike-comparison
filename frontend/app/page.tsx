@@ -18,14 +18,18 @@ export default async function Home({
     value: type,
   }));
 
+  const bikeType = type || "all";
+  const min = minPrice || 0;
+  const max = maxPrice || 20000;
+
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
       <main className="grid grid-cols-4 gap-8 row-start-2 items-center sm:items-start">
         <div className="col-span-full">
           <Filters
             types={types}
-            selectedType={type}
-            priceRange={[minPrice, maxPrice]}
+            selectedType={bikeType}
+            priceRange={[min, max]}
           />
         </div>
         {bikes && bikes.map((bike) => <BikeCard key={bike._id} bike={bike} />)}
