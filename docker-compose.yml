@@ -30,7 +30,6 @@ services:
     build: ./scraper
     container_name: bike-scraper
     restart: "always"
-    command: ["python", "scripts/trek.py"]
   nginx:
     image: nginx:latest
     container_name: nginx
