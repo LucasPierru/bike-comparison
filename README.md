@@ -170,6 +170,101 @@ crontab -e
 0 3 * * * docker run bike-scraper
 ```
 
+### 4. Configure nginx
+
+##### Install nginx on the server:
+
+```
+sudo apt update && sudo apt install nginx -y
+```
+
+##### Enable nginx:
+
+```
+sudo systemctl enable nginx
+sudo systemctl start nginx
+```
+
+##### Make sure nginx is running:
+
+```
+systemctl status nginx
+```
+
+##### Configure DNS and add the Digital Ocean nameservers to GoDaddy domain:
+
+| Type | Name | Value      |
+| ---- | ---- | ---------- |
+| A    | @    | IP address |
+| A    | www  | IP address |
+| A    | api  | IP address |
+
+```
+nslookup yourdomain.com to make sure it's running
+```
+
+##### Create nginx config:
+
+```
+sudo nano /etc/nginx/sites-available/default
+```
+
+```
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3000; # Next.js frontend running on port 3000
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    server_name api.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost4000; # Express API running on port 4000
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+```
+
+##### Test and reload nginx:
+
+```
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+##### Encrypt and get SSL certificate:
+
+```
+sudo apt install certbot python3-certbot-nginx -y
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com -d api.yourdomain.com
+```
+
+##### Certificate auto-renewal:
+
+```
+sudo systemctl enable certbot.timer
+sudo systemctl start certbot.timer
+```
+
+##### Final check
+
+```
+sudo systemctl restart nginx
+```
+
 ## Next Steps
 
 - Set up Express API to serve scraped data
