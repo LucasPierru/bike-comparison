@@ -24,8 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <Script
         type="text/javascript"
-        src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=6ee4cd8e19971ad0d6c26337b68b5d01d8a5851b"
-        crossOrigin="anonymous"
+        src="https://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=6ee4cd8e19971ad0d6c26337b68b5d01d8a5851b"
       />
       <body className={`${lexend.className}`}>{children}</body>
     </html>
