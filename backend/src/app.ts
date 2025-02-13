@@ -4,8 +4,13 @@ import api from './routes/api';
 import passport from 'passport';
 import { authorizeRequest } from './middlewares/authorizeRequest';
 /* import "./passport"; */
+import 'dotenv/config';
 
-const allowedOrigins = ['http://localhost:3000'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://143.198.39.232:3000',
+  'https://bike-comparator.com'
+];
 
 const app = express();
 

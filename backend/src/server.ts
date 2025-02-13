@@ -1,6 +1,7 @@
 import { createServer } from 'http';
 import app from './app';
 import { mongoConnect } from './services/mongo';
+import 'dotenv/config';
 
 const server = createServer(app);
 const PORT = process.env.PORT || 4000;
