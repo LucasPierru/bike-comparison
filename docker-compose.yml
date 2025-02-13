@@ -4,6 +4,7 @@ services:
   # ✅ Express API Service
   api:
     build: 
+      image: api:latest
       context: ./backend
     container_name: bike-api
     restart: always
@@ -11,8 +12,6 @@ services:
       - ./backend/.env
     ports:
       - "4000:4000"
-    volumes:
-      - ./backend:/app
 
   # ✅ Next.js Frontend
   frontend:
