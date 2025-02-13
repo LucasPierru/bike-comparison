@@ -23,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <Script
+        strategy="afterInteractive"
         type="text/javascript"
         src="https://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=6ee4cd8e19971ad0d6c26337b68b5d01d8a5851b"
       />
