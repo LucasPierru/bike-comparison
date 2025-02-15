@@ -1,4 +1,6 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import async_playwright
+import asyncio
 import time
 import sys
 import os
@@ -94,7 +96,7 @@ class Trek:
 
   def get_bike_links(self):
     with sync_playwright() as pw:
-      browser = pw.chromium.launch(headless=True)
+      browser = pw.chromium.launch(headless=True, args=['--no-sandbox'])
       page = browser.new_page()
 
       main_url = replace_query_param(self.url, "page", self.page)
@@ -318,21 +320,26 @@ class Trek:
 
   def scrape_bikes_selenium(self):
     bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
-    for previous, link, nxt in previous_and_next(self.bike_links):
-      base_url = f"{link["base_url"]}{link["color"]}"
-      if previous is not None:
-        previous_url = previous["base_url"]
-      else:
-        previous_url = ""
 
-      if nxt is not None:
-        next_url = nxt["base_url"]
-      else:
-        next_url = ""
+    with sync_playwright() as pw:
+      browser = pw.chromium.launch(headless=True, args=['--no-sandbox'])
+      for previous, link, nxt in previous_and_next(self.bike_links):
+        base_url = f"{link["base_url"]}{link["color"]}"
+        if previous is not None:
+          previous_url = previous["base_url"]
+        else:
+          previous_url = ""
 
-      if link["base_url"] != previous_url: 
-        bike.reset_bike()
-      self.pw_get_bike(link, previous_url, base_url, next_url, bike)
+        if nxt is not None:
+          next_url = nxt["base_url"]
+        else:
+          next_url = ""
+
+        if link["base_url"] != previous_url: 
+          bike.reset_bike()
+        self.pw_get_bike(link, previous_url, base_url, next_url, bike, browser)
+        # self.pw_get_bike(link, previous_url, base_url, next_url, bike, browser)
+      browser.close()
     print(f"Scraped {len(self.bikes)} bikes from {self.url}")
 
   def get_bikes(self):
@@ -345,100 +352,97 @@ class Trek:
       print(f"links progress: {self.bike_count}/{self.result_count}")
     self.scrape_bikes_selenium()
 
-  def pw_get_bike(self, link, previous_url, base_url, next_url, bike: Bike):
-    with sync_playwright() as pw:
-      browser = pw.chromium.launch(headless=True, args=["--disable-gpu", "--no-sandbox"])
-      page = browser.new_page()
-      page.set_extra_http_headers({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-      })
+  def pw_get_bike(self, link, previous_url, base_url, next_url, bike: Bike, browser):
+    page = browser.new_page()
+    page.set_extra_http_headers({
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    })
 
-      # Increase timeout (e.g., 60s instead of 30s)
-      page.set_default_timeout(60000)  # 60 seconds
-      try: 
-        page.goto(base_url, wait_until="load")  # go to url
+    # Increase timeout (e.g., 60s instead of 30s)
+    page.set_default_timeout(60000)  # 60 seconds
+    try: 
+      page.goto(base_url, wait_until="load")  # go to url
+    except PlaywrightTimeoutError:
+      try:
+        time.sleep(5)  # Wait before retrying
+        page.goto(base_url, wait_until="DOMContentLoaded")  # go to url
       except PlaywrightTimeoutError:
-        try:
-          time.sleep(5)  # Wait before retrying
-          page.goto(base_url, wait_until="DOMContentLoaded")  # go to url
-        except PlaywrightTimeoutError:
-          browser.close()
-          return
+        browser.close()
+        return
 
-      page.wait_for_selector("div[class=pdp-product-details]")  # wait for content to load
+    page.wait_for_selector("div[class=pdp-product-details]")  # wait for content to load
 
-      if link["base_url"] != previous_url:
-        current_spec_type = ""
-        bike.set_name(page.query_selector("h1[class=buying-zone__title]").inner_text())
-        bike.set_description(page.query_selector("p[qaid=product-positioning-statement]").inner_text())
-        bike.set_currentPrice(extract_price(page.query_selector("span[qaid=actual-price]").inner_text()))
-        bike.set_imageUrl(f"https:{page.query_selector("img[class=swiper-lazy]").get_attribute("src")}")
+    if link["base_url"] != previous_url:
+      current_spec_type = ""
+      bike.set_name(page.query_selector("h1[class=buying-zone__title]").inner_text())
+      bike.set_description(page.query_selector("p[qaid=product-positioning-statement]").inner_text())
+      bike.set_currentPrice(extract_price(page.query_selector("span[qaid=actual-price]").inner_text()))
+      bike.set_imageUrl(f"https:{page.query_selector("img[class=swiper-lazy]").get_attribute("src")}")
 
-        specs_container = page.query_selector(".pdp-spec-collapse")
-        if specs_container is not None: 
-          specs_items = specs_container.query_selector_all("tr")
-          for spec in specs_items:
-            newSpec, weight, weight_limit, spec_type = self.get_specs_1(spec, current_spec_type)
-            current_spec_type = spec_type
-            if newSpec != {}:
-              bike.append_component(newSpec)
-            if weight !="":
-              bike.set_weight(weight)
-            if weight_limit !="":
-              bike.set_weightLimit(weight_limit)
+      specs_container = page.query_selector(".pdp-spec-collapse")
+      if specs_container is not None: 
+        specs_items = specs_container.query_selector_all("tr")
+        for spec in specs_items:
+          newSpec, weight, weight_limit, spec_type = self.get_specs_1(spec, current_spec_type)
+          current_spec_type = spec_type
+          if newSpec != {}:
+            bike.append_component(newSpec)
+          if weight !="":
+            bike.set_weight(weight)
+          if weight_limit !="":
+            bike.set_weightLimit(weight_limit)
 
-        else: 
-          specs_section = page.query_selector("#trekProductSpecificationsComponent")
-          specs_container = specs_section.query_selector("ul")
-          specs_items = specs_container.query_selector_all("li")
-          for spec in specs_items:
-            newSpec, weight, weight_limit, spec_type = self.get_specs_2(spec, current_spec_type)
-            current_spec_type = spec_type
-            if newSpec != {}:
-              bike.append_component(newSpec)
-            if weight !="":
-              bike.set_weight(weight)
-            if weight_limit !="":
-              bike.set_weightLimit(weight_limit)
+      else: 
+        specs_section = page.query_selector("#trekProductSpecificationsComponent")
+        specs_container = specs_section.query_selector("ul")
+        specs_items = specs_container.query_selector_all("li")
+        for spec in specs_items:
+          newSpec, weight, weight_limit, spec_type = self.get_specs_2(spec, current_spec_type)
+          current_spec_type = spec_type
+          if newSpec != {}:
+            bike.append_component(newSpec)
+          if weight !="":
+            bike.set_weight(weight)
+          if weight_limit !="":
+            bike.set_weightLimit(weight_limit)
 
-      sizes = []
-      size_elements = page.query_selector_all(".product-attribute-btn")
-      for size in size_elements:
-          if "unavailable" not in size.get_attribute("class"):
-            sizes.append(size.inner_text())
+    sizes = []
+    size_elements = page.query_selector_all(".product-attribute-btn")
+    for size in size_elements:
+        if "unavailable" not in size.get_attribute("class"):
+          sizes.append(size.inner_text())
 
-      color = link["color"]
-      bike.append_variation({"color": color, "sizes": sizes})
+    color = link["color"]
+    bike.append_variation({"color": color, "sizes": sizes})
 
-      if link["base_url"] != next_url:
-        bike_type_parts = link["base_url"].split("/")
-        index = bike_type_parts.index("bikes")  # Find the position of "bikes"
-        bike_type = bike_type_parts[index + 2].rstrip("s")
-        
-        newBike = {
-          "createdAt": datetime.now(), 
-          "updatedAt": datetime.now(), 
-          "name": bike.get_name(), 
-          "description": bike.get_description(), 
-          "brand": self.brand_id,
-          "type": bike_type,
-          "currentPrice": bike.get_currentPrice(), 
-          "currency": "CAD",
-          "imageUrl": bike.get_imageUrl(), 
-          "source": link["base_url"], 
-          "affiliateLink": link, 
-          "weight": bike.get_weight(),
-          "weightLimit": bike.get_weightLimit(),
-          "variations": bike.get_variations(), 
-        }
-        
-        new_bike_id = self.post_bike(newBike)
-        component_ids = self.post_components(bike.get_components())
-        self.post_bike_components(new_bike_id, component_ids)
-        self.bikes.append(newBike)
-        print(f"progress: {len(self.bikes)}/{self.result_count}")
+    if link["base_url"] != next_url:
+      bike_type_parts = link["base_url"].split("/")
+      index = bike_type_parts.index("bikes")  # Find the position of "bikes"
+      bike_type = bike_type_parts[index + 2].rstrip("s")
+      
+      newBike = {
+        "createdAt": datetime.now(), 
+        "updatedAt": datetime.now(), 
+        "name": bike.get_name(), 
+        "description": bike.get_description(), 
+        "brand": self.brand_id,
+        "type": bike_type,
+        "currentPrice": bike.get_currentPrice(), 
+        "currency": "CAD",
+        "imageUrl": bike.get_imageUrl(), 
+        "source": link["base_url"], 
+        "affiliateLink": link, 
+        "weight": bike.get_weight(),
+        "weightLimit": bike.get_weightLimit(),
+        "variations": bike.get_variations(), 
+      }
+      
+      new_bike_id = self.post_bike(newBike)
+      component_ids = self.post_components(bike.get_components())
+      self.post_bike_components(new_bike_id, component_ids)
+      self.bikes.append(newBike)
+      print(f"progress: {len(self.bikes)}/{self.result_count}")
 
-      browser.close()
 
 # Example usage
 trek_url = "https://www.trekbikes.com/ca/en_CA/bikes/c/B100/?pageSize=24&page=0&q=%3Arelevance%3AfacetFrameset%3AfacetFrameset2&sort=relevance#"

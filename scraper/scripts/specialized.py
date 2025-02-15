@@ -1,4 +1,6 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import async_playwright, ElementHandle, Page
+import asyncio
 import time
 import sys
 import os
@@ -11,6 +13,8 @@ from models.bike import Bike
 from toolbox.toolbox import replace_query_param, previous_and_next, parse_sizes, extract_price, find_brand_in_component
 from db import get_database
 
+MAX_CONCURRENCY = 5 
+
 db = get_database()
 bike_collection = db["bikes"]
 brand_collection = db["brands"]
@@ -19,8 +23,9 @@ bike_component_collection = db["bikecomponents"]
 
 class Specialized:
   bike_links = []
+  bikes = []
 
-  def __init__(self, url, page=0):
+  def __init__(self, url: str):
     self.url = url
 
   def get_brand(self, name):
@@ -83,45 +88,115 @@ class Specialized:
         print(f"Bike inserted: {bike['name']}")
         return new_bike.inserted_id
 
-  def get_bike_links(self):
-    with sync_playwright() as pw:
-      browser = pw.chromium.launch(headless=True)
-      page = browser.new_page()
+  async def gather_bike_links(self):
+    async with async_playwright() as pw:
+      browser = await pw.chromium.launch(headless=True, args=['--no-sandbox'])
+      page = await browser.new_page()
 
       main_url = self.url
-      page.goto(main_url)  # go to url
-      page.set_extra_http_headers({
+      await page.goto(main_url)  # go to url
+      await page.set_extra_http_headers({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
       })
 
-      page.wait_for_selector("body")  # wait for content to load
-      btn_section = page.query_selector('section[class="sc-33bfb7a-0 iPDlzn"]')
+      await page.wait_for_selector("body")  # wait for content to load
+      btn_section = await page.query_selector('section[class="sc-33bfb7a-0 iPDlzn"]')
 
       while btn_section is not None:
-        show_more_btn = btn_section.query_selector('button[class="sc-60406dd7-0 sc-60406dd7-2 hWXKCL iwdvda"]')
-        show_more_btn.click()
+        show_more_btn = await btn_section.query_selector('button[class="sc-60406dd7-0 sc-60406dd7-2 hWXKCL iwdvda"]')
+        await show_more_btn.click()
         time.sleep(10)
-        btn_section = page.query_selector('section[class="sc-33bfb7a-0 iPDlzn"]')
-        print(btn_section)
+        btn_section = await page.query_selector('section[class="sc-33bfb7a-0 iPDlzn"]')
 
-      bike_elements = page.query_selector_all("article[data-component=product-tile]")  # Adjust selector
+      bike_elements = await page.query_selector_all("article[data-component=product-tile]")  # Adjust selector
 
       for bike in bike_elements:
-        link = f"https://www.specialized.com{bike.query_selector("a").get_attribute("href").split("?")[0]}"
-        ul = bike.query_selector("ul")
-        colors = ul.query_selector_all("li")
-        bike_colors = []
-        for color in colors:
-          color.hover()
-          color_a = color.query_selector("a")
-          color_link = color_a.get_attribute("href")
-          col = color_a.get_attribute("title")
-          bike_colors.append({"link": f"https://www.specialized.com{color_link}", "color": col})
-        self.bike_links.append({"base_url": link, "variations": bike_colors})
+        await self.get_link(bike)
         os.system('cls')
-        print(f"{len(self.bike_links)}/{len(bike_elements)}")
-      browser.close()
+        print(f"{len(self.get_bike_links())}/{len(bike_elements)}")
 
-url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
+      await browser.close()
+
+  async def get_bike_data(self, link):
+    async with async_playwright() as pw:
+      bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
+      browser = await pw.chromium.launch(headless=True, args=['--no-sandbox'])
+      page = await browser.new_page()
+      for idx, variation in enumerate(link["variations"]):
+        sizes = []
+        await page.goto(variation["link"])
+        await page.set_extra_http_headers({
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        })
+        await page.wait_for_selector("body")  # wait for content to load
+        time.sleep(2)
+        if idx == 0:
+          h1 = await page.query_selector("h1")
+          if h1 is not None:
+            name = await h1.inner_text()
+            bike.set_name(name)
+            """ self.bikes.append({"title": title}) """
+        size_selection = await page.query_selector('div[data-component="size-selection"]')  
+        if size_selection is None:
+          print(link)
+        if size_selection is not None:
+          size_buttons = await size_selection.query_selector_all("button")
+          for button in size_buttons:
+            button_html = await button.inner_html()
+            if "after" not in button_html:
+              # If the button doesn't have the ::after element, click it or interact with it
+              sizes.append(await button.inner_text())
+        bike.append_variation({"color": variation["color"], "sizes": sizes})
+        if idx == (len(link["variations"])-1):
+          self.bikes.append(bike.__dict__)
+          print(f"{len(self.bikes)}/{len(self.get_bike_links)}")
+      await browser.close()
+
+  async def get_bikes(self):
+    tasks = []
+    semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
+
+    async def scrape_with_semaphore(link):
+      async with semaphore:
+        await self.get_bike_data(link)
+    
+    for link in self.bike_links:
+      tasks.append(scrape_with_semaphore(link))
+      
+        
+    await asyncio.gather(*tasks)
+    print(self.bikes)
+      
+
+  async def get_link(self, bike: ElementHandle):
+    a_tag = await bike.query_selector("a")
+    link_end = await a_tag.get_attribute("href")
+    link = f"https://www.specialized.com{link_end.split("?")[0]}"
+    ul = await bike.query_selector("ul")
+    colors = await ul.query_selector_all("li")
+    bike_colors = []
+    for color in colors:
+      await color.hover()
+      await color.wait_for_selector("a")
+      color_a = await color.query_selector("a")
+      color_link = await color_a.get_attribute("href")
+      col = await color_a.get_attribute("title")
+      bike_colors.append({"link": f"https://www.specialized.com{color_link}", "color": col})
+    self.bike_links.append({"base_url": link, "variations": bike_colors})
+  
+  def get_bike_links(self):
+    return self.bike_links
+  
+async def main():
+  url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
+  spec = Specialized(url)
+  await spec.gather_bike_links()
+  links = spec.get_bike_links()
+  await spec.get_bikes()
+
+if __name__ == "__main__":
+  asyncio.run(main())
+""" url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
 spec = Specialized(url)
-spec.get_bike_links()
+link = {'base_url': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496', 'variations': [{'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381924-4223496', 'color': 'Satin Carbon / Blue Onyx'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381925-4223496', 'color': 'Satin Doppio / Gunmetal'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381904-4223496', 'color': 'Satin Metallic Spruce / Spruce'}]}
+asyncio.run(spec.get_bike_data(link)) """
