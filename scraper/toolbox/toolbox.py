@@ -2,6 +2,9 @@ from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from itertools import tee, islice, chain
 import re
 
+def clean_string(str):
+    return str.replace("\\", "").replace("\n", "")
+
 def previous_and_next(some_iterable):
     prevs, items, nexts = tee(some_iterable, 3)
     prevs = chain([None], prevs)
