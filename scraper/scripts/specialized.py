@@ -112,8 +112,8 @@ class Specialized:
 
       for bike in bike_elements:
         await self.get_link(bike)
-        os.system('cls')
-        print(f"{len(self.get_bike_links())}/{len(bike_elements)}")
+        # os.system('cls')
+        print(f"links gathered: {len(self.get_bike_links())}/{len(bike_elements)}")
 
       await browser.close()
 
@@ -173,7 +173,7 @@ class Specialized:
           if idx == (len(link["variations"])-1):
             print(bike.__dict__)
             self.bikes.append(bike.__dict__)
-            print(f"{len(self.bikes)}/{len(self.bike_links)}")
+            print(f"progress: {len(self.bikes)}/{len(self.bike_links)}")
       except Exception as e:
         print(e)
 
