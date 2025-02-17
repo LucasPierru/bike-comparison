@@ -24,6 +24,7 @@ bike_component_collection = db["bikecomponents"]
 class Specialized:
   bike_links = []
   bikes = []
+  brands = []
 
   def __init__(self, url: str):
     self.url = url
@@ -33,7 +34,7 @@ class Specialized:
     self.brand_id = existing_brand["_id"]
 
   def get_brands(self):
-    brands = brand_collection.find()
+    brands = brand_collection.find({})
     self.brands = brands.to_list()
 
   def post_brand(self, brand):
@@ -125,10 +126,10 @@ class Specialized:
       try:
         for idx, variation in enumerate(link["variations"]):
           sizes = []
-          await page.goto(variation["link"])
           await page.set_extra_http_headers({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
           })
+          await page.goto(variation["link"])
           await page.wait_for_selector("body")  # wait for content to load
           time.sleep(2)
           if idx == 0:
@@ -138,6 +139,11 @@ class Specialized:
             image_swiper = await page.query_selector("div[class=swiper-wrapper]")
             img = await image_swiper.query_selector("img")
             components_section = await page.query_selector("section[id=technical-specifications]")
+            nav = await page.query_selector("nav[aria-label=breadcrumb]")
+            crumbs = await nav.query_selector_all("li[itemprop=itemListElement]")
+            bike_type = await crumbs[-2].inner_text()
+
+            bike.set_type(bike_type)
             bike.set_source(link["base_url"])
             bike.set_currency("CAD")
             bike.set_brand(self.brand_id)
@@ -158,6 +164,30 @@ class Specialized:
             if img is not None:
               image_url = await img.get_attribute("src")
               bike.set_imageUrl(image_url)
+
+            if components_section is not None:
+              components = await components_section.query_selector_all('div[class="sc-2a49c864-2 jfzCL"]')
+              for component in components:
+                component_type_sel = await component.query_selector('p[class="sc-d3a69824-9 foppcC"]')
+                component_value_sel = await component.query_selector('p[class="sc-d3a69824-3 lnCxhL"]')
+                component_type = await component_type_sel.inner_text()
+                component_value = await component_value_sel.inner_text()
+                if component_type == "Weight":
+                  bike.set_weight(component_value)
+                else:
+                  brand = find_brand_in_component(component_value, self.brands)
+                  brand_id = None
+                  if brand is not None:
+                    brand_id = brand["_id"]
+                  bike.append_component({
+                    "type": component_type, 
+                    "name": component_value, 
+                    "brand": brand_id, 
+                    "source": "",
+                    "affiliateLink": "",
+                    "sizes": []
+                  })
+
 
           size_selection = await page.query_selector('div[data-component="size-selection"]')  
           if size_selection is None:
@@ -218,16 +248,18 @@ async def main():
   url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
   spec = Specialized(url)
   spec.get_brand("Specialized")
+  spec.get_brands()
   print("Getting links")
   await spec.gather_bike_links()
   links = spec.get_bike_links()
   print("Getting bikes")
   await spec.get_bikes()
 
-if __name__ == "__main__":
-  asyncio.run(main())
-""" url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
+""" if __name__ == "__main__":
+  asyncio.run(main()) """
+url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
 spec = Specialized(url)
 spec.get_brand("Specialized")
+spec.get_brands()
 link = {'base_url': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496', 'variations': [{'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381924-4223496', 'color': 'Satin Carbon / Blue Onyx'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381925-4223496', 'color': 'Satin Doppio / Gunmetal'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381904-4223496', 'color': 'Satin Metallic Spruce / Spruce'}]}
-asyncio.run(spec.get_bike_data(link)) """
+asyncio.run(spec.get_bike_data(link))

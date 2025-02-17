@@ -13,6 +13,8 @@ export default async function Home({
   const { bikes } = await getBikes(type as string);
   const { bikeTypes } = await getBikeTypes();
 
+  console.log({ bikeTypes });
+
   const types =
     bikeTypes?.map((type) => ({
       name: getTypeNameFromSlug(type),

@@ -420,7 +420,7 @@ class Trek:
     if link["base_url"] != next_url:
       bike_type_parts = link["base_url"].split("/")
       index = bike_type_parts.index("bikes")  # Find the position of "bikes"
-      bike_type = bike_type_parts[index + 2].rstrip("s")
+      bike_type = bike.bike_type_mapping(bike_type_parts[index + 2].rstrip("s"))
       
       newBike = {
         "createdAt": datetime.now(), 

@@ -2,6 +2,33 @@ from models.base_model import BaseModel
 
 class Bike(BaseModel):
   collection_name = "bikes"
+  bike_type_mapping = {
+    'cross-country-mountain-bike': ['mountain'],
+    'trail-mountain-bike': ['mountain'],
+    'downhill-mountain-bike': ['mountain'],
+    'dual-sport-bike': ['mountain', 'city'],
+    'fat-bike': ['mountain'],
+    'performance-road-bike': ['road'],
+    'triathlon-bike': ['road', 'triathlon'],
+    'gravel-bike': ['gravel', 'road'],
+    'cyclocross-bike': ['gravel', 'road'],
+    'cruiser-bike': ['city'],
+    'fitness-bike': ['city', 'hybrid'],
+    'loft': ['city'],
+    'townie': ['city'],
+    'recreation-bike': ['city', 'hybrid'],
+    'electra-e-bike': ['electric'],
+    'electra-kids-bike': ['electric', 'kids'],
+    'electric-hybrid-bike': ['electric', 'hybrid'],
+    'electric-mountain-bike': ['electric', 'mountain'],
+    'electric-road-bike': ['electric', 'road'],
+    'kids-hybrid-bike': ['kids', 'hybrid'],
+}
+
+  def map_to_general_bike_type(self, brand_type):
+    # Convert the brand type to lowercase to handle case-insensitivity
+    brand_type = brand_type.lower()
+    return self.bike_type_mapping.get(brand_type, 'Unknown Bike Type')  
 
   def __init__ (self, name:str, description:str, brand, type:str, currentPrice, currency, imageUrl:str, source:str, affiliateLink, weight:str, weight_limit:str, variations, components):
     self.name = name
