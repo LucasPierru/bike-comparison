@@ -218,8 +218,10 @@ async def main():
   url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
   spec = Specialized(url)
   spec.get_brand("Specialized")
+  print("Getting links")
   await spec.gather_bike_links()
   links = spec.get_bike_links()
+  print("Getting bikes")
   await spec.get_bikes()
 
 if __name__ == "__main__":
