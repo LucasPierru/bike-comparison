@@ -222,10 +222,10 @@ async def main():
   links = spec.get_bike_links()
   await spec.get_bikes()
 
-""" if __name__ == "__main__":
-  asyncio.run(main()) """
-url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
+if __name__ == "__main__":
+  asyncio.run(main())
+""" url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
 spec = Specialized(url)
 spec.get_brand("Specialized")
 link = {'base_url': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496', 'variations': [{'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381924-4223496', 'color': 'Satin Carbon / Blue Onyx'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381925-4223496', 'color': 'Satin Doppio / Gunmetal'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381904-4223496', 'color': 'Satin Metallic Spruce / Spruce'}]}
-asyncio.run(spec.get_bike_data(link))
+asyncio.run(spec.get_bike_data(link)) """
