@@ -90,7 +90,7 @@ class Specialized:
 
   async def gather_bike_links(self):
     async with async_playwright() as pw:
-      browser = await pw.chromium.launch(headless=True, args=['--no-sandbox'])
+      browser = await pw.chromium.launch(headless=True, args=['--no-sandbox', "--disable-gpu"])
       page = await browser.new_page()
 
       main_url = self.url
@@ -120,7 +120,7 @@ class Specialized:
   async def get_bike_data(self, link):
     async with async_playwright() as pw:
       bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
-      browser = await pw.chromium.launch(headless=True, args=['--no-sandbox'])
+      browser = await pw.chromium.launch(headless=True, args=['--no-sandbox', "--disable-gpu"])
       page = await browser.new_page()
       try:
         for idx, variation in enumerate(link["variations"]):

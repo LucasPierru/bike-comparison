@@ -96,7 +96,7 @@ class Trek:
 
   def get_bike_links(self):
     with sync_playwright() as pw:
-      browser = pw.chromium.launch(headless=True, args=['--no-sandbox'])
+      browser = pw.chromium.launch(headless=True, args=['--no-sandbox', "--disable-gpu"])
       page = browser.new_page()
 
       main_url = replace_query_param(self.url, "page", self.page)
@@ -104,6 +104,7 @@ class Trek:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
       })
       page.goto(main_url)  # go to url    
+      page.wait_for_timeout(1000)
 
       page.wait_for_selector(".searchresultslistcomponent")  # wait for content to load
 
@@ -130,6 +131,7 @@ class Trek:
 
         else:
           print(f"Skipping a bike due to error")
+      page.close()
       browser.close()
   
   def get_specs_1(self, spec, current_spec_type):
@@ -322,7 +324,7 @@ class Trek:
     bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
 
     with sync_playwright() as pw:
-      browser = pw.chromium.launch(headless=True, args=['--no-sandbox'])
+      browser = pw.chromium.launch(headless=True, args=['--no-sandbox', "--disable-gpu"])
       for previous, link, nxt in previous_and_next(self.bike_links):
         base_url = f"{link["base_url"]}{link["color"]}"
         if previous is not None:
