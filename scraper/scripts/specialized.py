@@ -25,6 +25,7 @@ class Specialized:
   bike_links = []
   bikes = []
   brands = []
+  type_set = set()
 
   def __init__(self, url: str):
     self.url = url
@@ -123,8 +124,8 @@ class Specialized:
       bike = Bike(name="", description="", brand="", type="", currentPrice="", currency="", imageUrl="", source="", affiliateLink={"base_url": "", "color": ""}, weight="", weight_limit="", variations=[], components=[])
       browser = await pw.chromium.launch(headless=True, args=['--no-sandbox', "--disable-gpu"])
       page = await browser.new_page()
-      try:
-        for idx, variation in enumerate(link["variations"]):
+      for idx, variation in enumerate(link["variations"]):
+        try:
           sizes = []
           await page.set_extra_http_headers({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
@@ -140,10 +141,12 @@ class Specialized:
             img = await image_swiper.query_selector("img")
             components_section = await page.query_selector("section[id=technical-specifications]")
             nav = await page.query_selector("nav[aria-label=breadcrumb]")
-            crumbs = await nav.query_selector_all("li[itemprop=itemListElement]")
-            bike_type = await crumbs[-2].inner_text()
+            first_size_button = await page.query_selector('button[class="sc-60406dd7-0 sc-60406dd7-2 iMRIVl iwdvda sc-a8ed3f79-0 flntDk"]')
 
-            bike.set_type(bike_type)
+            if first_size_button is not None:
+              await first_size_button.click()
+              time.sleep(3)
+            
             bike.set_source(link["base_url"])
             bike.set_currency("CAD")
             bike.set_brand(self.brand_id)
@@ -154,22 +157,37 @@ class Specialized:
               """ self.bikes.append({"title": title}) """
             if product_details_section is not None:
               description_tag = await product_details_section.query_selector("p")
+              if description_tag is None:
+                raise Exception("description error")
               description = await description_tag.inner_text()
               bike.set_description(clean_string(description))
             
             if h5 is not None:
-              price = extract_price(await h5.inner_text())
+              price_value = await h5.inner_text()
+              if "-" in price_value:
+                price_value = price_value.split("-")[0]
+              price = extract_price(price_value)
               bike.set_currentPrice(price)
 
             if img is not None:
               image_url = await img.get_attribute("src")
               bike.set_imageUrl(image_url)
+            
+            if nav is not None:
+              crumbs = await nav.query_selector_all("li[itemprop=itemListElement]")
+              if crumbs[-2] is None:
+                raise Exception("nav error")
+              bike_type = await crumbs[-2].inner_text()
+              bike.set_type(bike.map_to_general_bike_type(bike_type))
+              self.type_set.add(bike_type)
 
             if components_section is not None:
               components = await components_section.query_selector_all('div[class="sc-2a49c864-2 jfzCL"]')
               for component in components:
                 component_type_sel = await component.query_selector('p[class="sc-d3a69824-9 foppcC"]')
                 component_value_sel = await component.query_selector('p[class="sc-d3a69824-3 lnCxhL"]')
+                if component_type_sel is None or component_value_sel is None:
+                  continue
                 component_type = await component_type_sel.inner_text()
                 component_value = await component_value_sel.inner_text()
                 if component_type == "Weight":
@@ -183,7 +201,7 @@ class Specialized:
                     "type": component_type, 
                     "name": component_value, 
                     "brand": brand_id, 
-                    "source": "",
+                    "source": "https://www.specialized.com",
                     "affiliateLink": "",
                     "sizes": []
                   })
@@ -201,12 +219,11 @@ class Specialized:
                 sizes.append(await button.inner_text())
           bike.append_variation({"color": variation["color"], "sizes": sizes})
           if idx == (len(link["variations"])-1):
-            print(bike.__dict__)
             self.bikes.append(bike.__dict__)
             print(f"progress: {len(self.bikes)}/{len(self.bike_links)}")
-      except Exception as e:
-        print(e)
-
+        except Exception as e:
+          print(e)
+          print(variation["link"])
       await browser.close()
 
   async def get_bikes(self):
@@ -223,6 +240,7 @@ class Specialized:
         
     await asyncio.gather(*tasks)
     print(self.bikes)
+    print(self.type_set)
       
 
   async def get_link(self, bike: ElementHandle):
@@ -255,11 +273,28 @@ async def main():
   print("Getting bikes")
   await spec.get_bikes()
 
-""" if __name__ == "__main__":
-  asyncio.run(main()) """
-url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
+if __name__ == "__main__":
+  asyncio.run(main())
+""" url = "https://www.specialized.com/ca/en/shop/bikes?group=Bikes"
 spec = Specialized(url)
 spec.get_brand("Specialized")
 spec.get_brands()
 link = {'base_url': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496', 'variations': [{'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381924-4223496', 'color': 'Satin Carbon / Blue Onyx'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381925-4223496', 'color': 'Satin Doppio / Gunmetal'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381904-4223496', 'color': 'Satin Metallic Spruce / Spruce'}]}
-asyncio.run(spec.get_bike_data(link))
+component_error_link = {
+  'base_url': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661', 
+  'variations': [
+    {
+      'link': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661?color=5442154-4277661', 
+      'color': 'Gloss Dune White / Dove Grey Reflective'
+    }, 
+    {
+      'link': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661?color=5442174-4277661', 
+      'color': 'Gloss Ion / Silver Dust Reflective'
+    }, 
+    {
+      'link': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661?color=5442175-4277661', 
+      'color': 'Satin Cast Lilac / Ashen Grey Reflective'
+    }
+  ]
+}
+asyncio.run(spec.get_bike_data(component_error_link)) """

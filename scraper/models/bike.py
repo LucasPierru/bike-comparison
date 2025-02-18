@@ -23,12 +23,24 @@ class Bike(BaseModel):
     'electric-mountain-bike': ['electric', 'mountain'],
     'electric-road-bike': ['electric', 'road'],
     'kids-hybrid-bike': ['kids', 'hybrid'],
+    'Downhill Mountain Bikes': ['mountain'],
+    'Performance Road Bikes': ['road'],
+    'BMX and Dirt Jump Bikes': ['bmx', 'mountain'],
+    'Cross Country Mountain Bikes': ['mountain'],
+    'Vélos Enfants': ['kids'],
+    'Trail Bikes': ['mountain'],
+    'Kids Bikes': ['kids'],
+    'Gravel Bikes': ['gravel', 'road'],
+    'Mountain Bikes': ['bikes'],
+    'Globe': ['city', 'electric'],
+    'Fitness Bikes': ['city', 'hybrid'],
+    'Bikes': ['city', 'hybrid']
 }
 
   def map_to_general_bike_type(self, brand_type):
     # Convert the brand type to lowercase to handle case-insensitivity
     brand_type = brand_type.lower()
-    return self.bike_type_mapping.get(brand_type, 'Unknown Bike Type')  
+    return self.bike_type_mapping.get(brand_type, None)  
 
   def __init__ (self, name:str, description:str, brand, type:str, currentPrice, currency, imageUrl:str, source:str, affiliateLink, weight:str, weight_limit:str, variations, components):
     self.name = name
