@@ -104,8 +104,9 @@ class Specialized:
       await page.wait_for_selector("body")  # wait for content to load
       btn_section = await page.query_selector('section[class="sc-33bfb7a-0 iPDlzn"]')
 
+
       while btn_section is not None:
-        show_more_btn = await btn_section.query_selector('button[class="sc-60406dd7-0 sc-60406dd7-2 hWXKCL iwdvda"]')
+        show_more_btn = await btn_section.query_selector('button')
         await show_more_btn.click()
         time.sleep(10)
         btn_section = await page.query_selector('section[class="sc-33bfb7a-0 iPDlzn"]')
@@ -132,14 +133,13 @@ class Specialized:
           })
           await page.goto(variation["link"])
           await page.wait_for_selector("body")  # wait for content to load
-          time.sleep(2)
+          time.sleep(4)
           if idx == 0:
             h1 = await page.query_selector("h1")
             product_details_section = await page.query_selector("section[id=product-details]")
             h5 = await page.query_selector("h5")
-            image_swiper = await page.query_selector("div[class=swiper-wrapper]")
-            img = await image_swiper.query_selector("img")
-            components_section = await page.query_selector("section[id=technical-specifications]")
+            img = await page.query_selector("div[class=swiper-wrapper] img")
+            components_section_elements = await page.query_selector_all("section[id=technical-specifications] div div div div div div div div div")
             nav = await page.query_selector("nav[aria-label=breadcrumb]")
             first_size_button = await page.query_selector('button[class="sc-60406dd7-0 sc-60406dd7-2 iMRIVl iwdvda sc-a8ed3f79-0 flntDk"]')
 
@@ -181,31 +181,31 @@ class Specialized:
               bike.set_type(bike.map_to_general_bike_type(bike_type))
               self.type_set.add(bike_type)
 
-            if components_section is not None:
-              components = await components_section.query_selector_all('div[class="sc-2a49c864-2 jfzCL"]')
-              for component in components:
-                component_type_sel = await component.query_selector('p[class="sc-d3a69824-9 foppcC"]')
-                component_value_sel = await component.query_selector('p[class="sc-d3a69824-3 lnCxhL"]')
-                if component_type_sel is None or component_value_sel is None:
-                  continue
-                component_type = await component_type_sel.inner_text()
-                component_value = await component_value_sel.inner_text()
-                if component_type == "Weight":
-                  bike.set_weight(component_value)
-                else:
-                  brand = find_brand_in_component(component_value, self.brands)
-                  brand_id = None
-                  if brand is not None:
-                    brand_id = brand["_id"]
-                  bike.append_component({
-                    "type": component_type, 
-                    "name": component_value, 
-                    "brand": brand_id, 
-                    "source": "https://www.specialized.com",
-                    "affiliateLink": "",
-                    "sizes": []
-                  })
-
+            for component in components_section_elements:
+              components_p = await component.query_selector_all('p')
+              if len(components_p) < 2:
+                continue
+              component_type_sel = components_p[0]
+              component_value_sel = components_p[1]
+              component_type = await component_type_sel.inner_text()
+              component_value = await component_value_sel.inner_text()
+              if component_type == "Weight":
+                bike.set_weight(component_value)
+              elif component_type == "Weight Size":
+                continue
+              else:
+                brand = find_brand_in_component(component_value, self.brands)
+                brand_id = None
+                if brand is not None:
+                  brand_id = brand["_id"]
+                bike.append_component({
+                  "type": component_type, 
+                  "name": component_value, 
+                  "brand": brand_id, 
+                  "source": "https://www.specialized.com",
+                  "affiliateLink": "",
+                  "sizes": []
+                })
 
           size_selection = await page.query_selector('div[data-component="size-selection"]')  
           if size_selection is None:
@@ -219,7 +219,30 @@ class Specialized:
                 sizes.append(await button.inner_text())
           bike.append_variation({"color": variation["color"], "sizes": sizes})
           if idx == (len(link["variations"])-1):
+            bike.set_affiliateLink({"base_url": variation["link"], "color": variation["color"]})
             self.bikes.append(bike.__dict__)
+            newBike = {
+              "createdAt": datetime.now(), 
+              "updatedAt": datetime.now(), 
+              "name": bike.get_name(), 
+              "description": bike.get_description(), 
+              "brand": self.brand_id,
+              "type": bike.get_type(),
+              "currentPrice": bike.get_currentPrice(), 
+              "currency": "CAD",
+              "imageUrl": bike.get_imageUrl(), 
+              "source": bike.get_source(), 
+              "affiliateLink": bike.get_affiliateLink(), 
+              "weight": bike.get_weight(),
+              "weightLimit": None,
+              "variations": bike.get_variations(), 
+            }
+
+            print(newBike)
+            
+            new_bike_id = self.post_bike(newBike)
+            component_ids = self.post_components(bike.get_components())
+            self.post_bike_components(new_bike_id, component_ids)
             print(f"progress: {len(self.bikes)}/{len(self.bike_links)}")
         except Exception as e:
           print(e)
@@ -281,19 +304,15 @@ spec.get_brand("Specialized")
 spec.get_brands()
 link = {'base_url': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496', 'variations': [{'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381924-4223496', 'color': 'Satin Carbon / Blue Onyx'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381925-4223496', 'color': 'Satin Doppio / Gunmetal'}, {'link': 'https://www.specialized.com/ca/en/diverge-sport-carbon/p/4223496?color=5381904-4223496', 'color': 'Satin Metallic Spruce / Spruce'}]}
 component_error_link = {
-  'base_url': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661', 
+  'base_url': 'https://www.specialized.com/ca/en/rockhopper-sport/p/221599', 
   'variations': [
     {
-      'link': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661?color=5442154-4277661', 
-      'color': 'Gloss Dune White / Dove Grey Reflective'
+      'link': 'https://www.specialized.com/ca/en/rockhopper-sport/p/221599?color=366665-221599', 
+      'color': 'GLOSS PINE GREEN / OBSIDIAN'
     }, 
     {
-      'link': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661?color=5442174-4277661', 
-      'color': 'Gloss Ion / Silver Dust Reflective'
-    }, 
-    {
-      'link': 'https://www.specialized.com/ca/en/sirrus-x-20/p/4277661?color=5442175-4277661', 
-      'color': 'Satin Cast Lilac / Ashen Grey Reflective'
+      'link': 'https://www.specialized.com/ca/en/rockhopper-sport/p/221599?color=366667-221599', 
+      'color': 'GLOSS SAPPHIRE / DUNE WHITE'
     }
   ]
 }
